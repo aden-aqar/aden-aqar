@@ -348,7 +348,10 @@
 
       <div class="row-flex" style="justify-content: space-between; margin-bottom: 12px;">
         <span style="font-size: 0.88rem; color: #14532d; font-weight: bold;">وضع الأدمن مفعّل</span>
-        <button type="button" class="btn-secondary" onclick="lockAdminPanel()">قفل لوحة الأدمن</button>
+        <div class="row-flex">
+          <button type="button" class="btn-soft" onclick="resetFilters()">إعادة ضبط البحث</button>
+          <button type="button" class="btn-secondary" onclick="lockAdminPanel()">قفل لوحة الأدمن</button>
+        </div>
       </div>
 
       <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:14px;">
@@ -377,6 +380,9 @@
         <button type="button" class="btn-danger" onclick="clearAdminGhToken()">مسح التوكن يدوياً</button>
       </div>
       <div id="adminGhTokenStatus" style="font-size: 0.88rem; font-weight: bold;"></div>
+      <p style="font-size:0.8rem;color:#4b5563;margin-top:6px;">
+        ملاحظة عند ظهور Bad credentials (401): تأكد أن التوكن صحيح وغير منتهي وأن صلاحية Contents: Read and write مفعّلة على المستودع aden-aqar.
+      </p>
     </section>
 
     <section class="card">
@@ -392,9 +398,6 @@
             <option value="إيجار">إيجار</option>
             <option value="أخرى">أخرى</option>
           </select>
-        </div>
-        <div style="flex: 0 0 auto;">
-          <button type="button" class="btn-soft" onclick="resetFilters()">إعادة ضبط</button>
         </div>
       </div>
     </section>
@@ -1166,7 +1169,7 @@
 
         const phoneSectionHtml = isPhoneRevealed
           ? `<div class="phone-reveal-box">رقم المعلن: ${escapeHtml(revealedPhonesSession[String(item.id)])}</div>`
-          : `<button type="button" class="btn-primary" style="width:100%;margin:8px 0;" onclick="openOathModal('${escapeHtml(item.id)}')">أداء القسم لإظهار رقم المعلن</button>`;
+          : `<button type="button" class="btn-success" style="width:100%;margin:8px 0;" onclick="openOathModal('${escapeHtml(item.id)}')">اضغط لمعرفة الرقم</button>`;
 
         const ownerToggleBtn = canEdit
           ? `<button type="button" class="btn-soft" onclick="toggleSaleStatusQuick('${escapeHtml(item.id)}')">${isSold ? "جعله متوفر" : "تحديد كـ انباع"}</button>`
