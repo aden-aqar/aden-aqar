@@ -16,6 +16,8 @@
       --muted: #4b5563;
       --border: #d1d5db;
       --danger: #b91c1c;
+      --sold-bg: #fee2e2;
+      --sold-text: #991b1b;
     }
 
     * {
@@ -124,6 +126,27 @@
       font-size: 0.9rem;
     }
 
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .status-available {
+      background: var(--accent-soft);
+      color: var(--primary);
+      border: 1px solid #86efac;
+    }
+
+    .status-sold {
+      background: var(--sold-bg);
+      color: var(--sold-text);
+      border: 1px solid #fca5a5;
+    }
+
     input, select, textarea {
       width: 100%;
       padding: 10px 12px;
@@ -192,6 +215,33 @@
       margin-bottom: 12px;
     }
 
+    .oath-box {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 8px;
+    }
+
+    .oath-statement {
+      font-weight: bold;
+      color: var(--primary-dark);
+      font-size: 0.92rem;
+      margin-bottom: 8px;
+      line-height: 1.7;
+    }
+
+    .phone-reveal-box {
+      background: #ecfdf5;
+      border: 1px solid #6ee7b7;
+      color: var(--primary-dark);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      margin: 8px 0;
+    }
+
     .listings-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
@@ -249,7 +299,7 @@
     .modal-box {
       background: #fff;
       border-radius: 12px;
-      max-width: 480px;
+      max-width: 500px;
       width: 100%;
       padding: 18px;
       max-height: 90vh;
@@ -287,14 +337,22 @@
           <span class="badge-counter" id="visibleListingsCounter">المعروض الظاهر: 0</span>
         </div>
         <div class="row-flex">
-          <button type="button" class="btn-soft" id="toggleAdminBtn" onclick="toggleAdminPanel()">إدارة وتعديل</button>
+          <button type="button" class="btn-soft" id="toggleAdminBtn" onclick="toggleAdminPanel()">إدارة وتعديل (أدمن)</button>
           <button type="button" class="btn-primary" onclick="openModal()">إضافة معروض جديد</button>
         </div>
       </div>
     </section>
 
     <section class="card hidden" id="adminPanel">
-      <div class="card-title">إعدادات الأدمن والشريط الإخباري ورمز GitHub</div>
+      <div class="card-title">لوحة الأدمن (صلاحية الحذف، الشريط الإخباري، ورمز GitHub)</div>
+
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:14px;">
+        <div style="font-weight:bold;color:#14532d;margin-bottom:6px;">صلاحيات إدارة المعروضات للأدمن:</div>
+        <p style="font-size:0.88rem;color:#374151;margin-bottom:8px;">
+          عند فتح لوحة الأدمن يكون وضع الأدمن مفعّلاً لحذف أي معروض من القائمة أو مسح جميع المعروضات عند الحاجة. التعديل مخصص لمنشئ المعروض فقط.
+        </p>
+        <button type="button" class="btn-danger" onclick="clearAllListingsByAdmin()">حذف جميع المعروضات (أدمن)</button>
+      </div>
 
       <label for="adminTickerInput">نص الشريط الإخباري (يستطيع الأدمن وضع أي خبر هنا)</label>
       <input type="text" id="adminTickerInput" placeholder="اكتب الخبر أو التنبيه الذي يظهر في الشريط المتحرك..." />
@@ -342,6 +400,7 @@
     </section>
   </main>
 
+  <!-- نافذة إضافة / تعديل المعروض -->
   <div class="modal-backdrop" id="listingModal">
     <div class="modal-box">
       <div class="card-title" id="modalTitle">إضافة معروض جديد</div>
@@ -361,11 +420,17 @@
           <option value="أخرى">أخرى</option>
         </select>
 
+        <label for="itemSaleStatus">حالة العرض (متوفر أم انباع)</label>
+        <select id="itemSaleStatus">
+          <option value="متوفر">ما زال متوفر</option>
+          <option value="تم البيع">انباع / تم البيع</option>
+        </select>
+
         <label for="itemPrice">المبلغ المعروض به</label>
         <input type="text" id="itemPrice" placeholder="مثال: 950,000 أو 4,500,000" required />
 
-        <label for="itemPhone">رقم المعلن (شرط أساسي لإضافة الإعلان)</label>
-        <input type="text" id="itemPhone" placeholder="مثال: 771234567" required />
+        <label for="itemPhone">رقم المعلن (شرط أساسي لإنشاء المعروض - لا يظهر للمشاهدين إلا بعد القسم)</label>
+        <input type="tel" id="itemPhone" placeholder="مثال: 771234567" required />
 
         <label for="itemImages">صور العقار أو السيارة (كل رابط أو مسار في سطر)</label>
         <textarea id="itemImages" rows="3" placeholder="images/photo1.jpg&#10;images/photo2.jpg"></textarea>
@@ -380,8 +445,8 @@
           <div id="uploadMsg" style="margin-top: 8px; font-size: 0.88rem; font-weight: bold;"></div>
         </div>
 
-        <label for="itemDesc">تفاصيل إضافية</label>
-        <textarea id="itemDesc" rows="3" placeholder="اكتب المواصفات والملاحظات..."></textarea>
+        <label for="itemDesc">تفاصيل إضافية (يُمنع كتابة أي أرقام هنا)</label>
+        <textarea id="itemDesc" rows="3" placeholder="اكتب المواصفات والملاحظات بالكلمات فقط دون أي أرقام..."></textarea>
 
         <div class="row-flex" style="justify-content: flex-end; margin-top: 8px;">
           <button type="submit" class="btn-success" id="saveListingBtn">حفظ ونشر المعروض</button>
@@ -389,6 +454,26 @@
         </div>
         <div id="formMsg" style="margin-top: 8px; font-size: 0.88rem; font-weight: bold;"></div>
       </form>
+    </div>
+  </div>
+
+  <!-- نافذة القسم لإظهار رقم المعلن -->
+  <div class="modal-backdrop" id="oathModal">
+    <div class="modal-box">
+      <div class="card-title">القسم لإظهار رقم المعلن</div>
+      <input type="hidden" id="oathTargetListingId" />
+      <div class="oath-box">
+        <div class="oath-statement">
+          اقسم بالله اني سادفع 1٪ كدلاله للموقع ع رقم الحساب22846 في بنك عدن الاول
+        </div>
+        <label for="oathConfirmationInput">اكتب في المربع أدناه: أقسم بالله</label>
+        <input type="text" id="oathConfirmationInput" placeholder="اكتب هنا: أقسم بالله" autocomplete="off" />
+      </div>
+      <div class="row-flex" style="justify-content: flex-end; margin-top: 10px;">
+        <button type="button" class="btn-success" onclick="verifyOathAndRevealPhone()">إظهار رقم المعلن</button>
+        <button type="button" class="btn-secondary" onclick="closeOathModal()">إغلاق</button>
+      </div>
+      <div id="oathMsg" style="margin-top: 8px; font-size: 0.88rem; font-weight: bold;"></div>
     </div>
   </div>
   <script>
@@ -401,6 +486,7 @@
 
     let isUploadCancelled = false;
     let activeUploadController = null;
+    let isAdminLoggedIn = false;
 
     function sanitizeTokenValue(raw) {
       return String(raw || "").trim();
@@ -494,8 +580,10 @@
       const panel = document.getElementById("adminPanel");
       if (!panel) return;
       panel.classList.toggle("hidden");
+      isAdminLoggedIn = !panel.classList.contains("hidden");
       syncAdminTokenUI(true);
       syncAdminTickerUI();
+      renderListings();
     }
 
     function setUploadButtonsState(isUploading) {
@@ -521,16 +609,62 @@
       syncAdminTokenUI(true);
     }
 
-    function fileToB64(file) {
+    function prepareImageBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
-          const result = String(reader.result || "");
-          const parts = result.split(",");
-          resolve(parts.length > 1 ? parts[1] : result);
+          const dataUrl = String(reader.result || "");
+          const img = new Image();
+          img.onload = () => {
+            try {
+              const maxSide = 1280;
+              let w = img.width || 800;
+              let h = img.height || 600;
+              if (w > maxSide || h > maxSide) {
+                if (w >= h) {
+                  h = Math.round((h * maxSide) / w);
+                  w = maxSide;
+                } else {
+                  w = Math.round((w * maxSide) / h);
+                  h = maxSide;
+                }
+              }
+              const canvas = document.createElement("canvas");
+              canvas.width = w;
+              canvas.height = h;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, w, h);
+              const compressedUrl = canvas.toDataURL("image/jpeg", 0.82);
+              const b64 = compressedUrl.split(",")[1] || "";
+              resolve({ base64: b64, ext: "jpg" });
+            } catch (_) {
+              const parts = dataUrl.split(",");
+              const ext = (file.name.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "") || "jpg";
+              resolve({ base64: parts.length > 1 ? parts[1] : dataUrl, ext });
+            }
+          };
+          img.onerror = () => {
+            const parts = dataUrl.split(",");
+            const ext = (file.name.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "") || "jpg";
+            resolve({ base64: parts.length > 1 ? parts[1] : dataUrl, ext });
+          };
+          img.src = dataUrl;
         };
         reader.onerror = () => reject(new Error("تعذر قراءة ملف الصورة."));
         reader.readAsDataURL(file);
+      });
+    }
+
+    async function sendGitHubPutRequest(url, token, authScheme, payload, signal) {
+      return fetch(url, {
+        method: "PUT",
+        headers: {
+          "Authorization": `${authScheme} ${token}`,
+          "Accept": "application/vnd.github+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload),
+        signal
       });
     }
 
@@ -561,31 +695,30 @@
         for (let i = 0; i < fileEl.files.length; i++) {
           if (isUploadCancelled) break;
           const f = fileEl.files[i];
-          msgEl.textContent = `جاري تحميل الصورة ${i + 1} من ${fileEl.files.length}...`;
+          msgEl.textContent = `جاري تجهيز ورفع الصورة ${i + 1} من ${fileEl.files.length}...`;
 
-          const base64 = await fileToB64(f);
+          const prepared = await prepareImageBase64(f);
           if (isUploadCancelled) break;
 
-          const ext = (f.name.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "") || "jpg";
-          const name = `${Date.now()}-${i + 1}-aqar.${ext}`;
+          const name = `${Date.now()}-${i + 1}-aqar.${prepared.ext}`;
+          const endpoint = `https://api.github.com/repos/${GH_ACCOUNT}/${GH_PROJECT}/contents/${GH_FOLDER}/${name}`;
+          const bodyPayload = {
+            message: `Upload ${name}`,
+            content: prepared.base64,
+            branch: GH_BRANCH
+          };
 
           activeUploadController = new AbortController();
           const timeoutId = setTimeout(() => {
             if (activeUploadController) activeUploadController.abort();
-          }, 25000);
+          }, 30000);
 
           let res;
           try {
-            res = await fetch(`https://api.github.com/repos/${GH_ACCOUNT}/${GH_PROJECT}/contents/${GH_FOLDER}/${name}`, {
-              method: "PUT",
-              headers: {
-                "Authorization": `Bearer ${token}`,
-                "Accept": "application/vnd.github+json",
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({ message: `Upload ${name}`, content: base64, branch: GH_BRANCH }),
-              signal: activeUploadController.signal
-            });
+            res = await sendGitHubPutRequest(endpoint, token, "Bearer", bodyPayload, activeUploadController.signal);
+            if (res.status === 401) {
+              res = await sendGitHubPutRequest(endpoint, token, "token", bodyPayload, activeUploadController.signal);
+            }
           } finally {
             clearTimeout(timeoutId);
             activeUploadController = null;
@@ -595,9 +728,9 @@
             let errDetail = "";
             try {
               const errJson = await res.json();
-              errDetail = errJson && errJson.message ? ` (${errJson.message})` : "";
+              errDetail = errJson && errJson.message ? ` - ${errJson.message}` : "";
             } catch (_) {}
-            throw new Error(`فشل رفع الصورة ${i + 1}${errDetail}`);
+            throw new Error(`فشل رفع الصورة ${i + 1} (رمز ${res.status})${errDetail}`);
           }
 
           uploadedUrls.push(`${GH_FOLDER}/${name}`);
@@ -626,8 +759,48 @@
         syncAdminTokenUI(true);
       }
     }
+    const OWNER_ID_STORAGE_KEY = "aden_aqar_owner_key_v1";
     const TICKER_STORAGE_KEY = "aden_aqar_custom_ticker_v1";
     const DEFAULT_TICKER_TEXT = "مرحباً بكم في منصة عدن للعقارات والسيارات - تصفح أحدث العروض العقارية والمركبات في عدن - إدارة النشر والصور عبر لوحة الأدمن";
+    const LISTINGS_STORAGE_KEY = "aden_aqar_listings_v1";
+
+    const revealedPhonesSession = {};
+
+    function getOrCreateOwnerKey() {
+      try {
+        let key = localStorage.getItem(OWNER_ID_STORAGE_KEY);
+        if (!key) {
+          key = "owner-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+          localStorage.setItem(OWNER_ID_STORAGE_KEY, key);
+        }
+        return key;
+      } catch (_) {
+        return "session-owner";
+      }
+    }
+
+    function isListingOwner(item) {
+      const myKey = getOrCreateOwnerKey();
+      return Boolean(item && item.ownerKey && String(item.ownerKey) === String(myKey));
+    }
+
+    function hasAnyDigit(text) {
+      return /[0-9٠-٩]/.test(String(text || ""));
+    }
+
+    function normalizeOathPhrase(text) {
+      return String(text || "")
+        .replace(/[أإآ]/g, "ا")
+        .replace(/ى/g, "ي")
+        .replace(/ة/g, "ه")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function isValidOathInput(text) {
+      const norm = normalizeOathPhrase(text);
+      return norm === "اقسم بالله";
+    }
 
     function loadTickerText() {
       try {
@@ -740,14 +913,14 @@
       }
     }
 
-    const LISTINGS_STORAGE_KEY = "aden_aqar_listings_v1";
-
     const DEFAULT_LISTINGS = [
       {
         id: "sample-1",
-        title: "شقة سكنية 3 غرف وحمامين",
+        ownerKey: "system-default",
+        title: "شقة سكنية ثلاث غرف وحمامين",
         area: "كريتر - عدن",
         type: "بيع",
+        saleStatus: "متوفر",
         price: "45,000,000",
         phone: "770000001",
         images: ["images/sample-flat.jpg"],
@@ -755,9 +928,11 @@
       },
       {
         id: "sample-2",
+        ownerKey: "system-default",
         title: "شقة مفروشة للإيجار الشهري",
         area: "المعلا - عدن",
         type: "إيجار",
+        saleStatus: "متوفر",
         price: "350,000",
         phone: "770000002",
         images: ["images/sample-rent.jpg"],
@@ -816,6 +991,66 @@
       if (visibleEl) visibleEl.textContent = `المعروض الظاهر: ${visibleCount}`;
     }
 
+    function openOathModal(listingId) {
+      const modal = document.getElementById("oathModal");
+      const idEl = document.getElementById("oathTargetListingId");
+      const inputEl = document.getElementById("oathConfirmationInput");
+      const msgEl = document.getElementById("oathMsg");
+
+      if (idEl) idEl.value = listingId;
+      if (inputEl) inputEl.value = "";
+      if (msgEl) msgEl.textContent = "";
+      if (modal) modal.style.display = "flex";
+    }
+
+    function closeOathModal() {
+      const modal = document.getElementById("oathModal");
+      if (modal) modal.style.display = "none";
+    }
+
+    function verifyOathAndRevealPhone() {
+      const idEl = document.getElementById("oathTargetListingId");
+      const inputEl = document.getElementById("oathConfirmationInput");
+      const msgEl = document.getElementById("oathMsg");
+      const targetId = String(idEl ? idEl.value : "");
+      const typedOath = inputEl ? inputEl.value : "";
+
+      if (!isValidOathInput(typedOath)) {
+        if (msgEl) {
+          msgEl.style.color = "#c62828";
+          msgEl.textContent = "يرجى كتابة (أقسم بالله) بشكل صحيح في المربع لإظهار رقم المعلن.";
+        }
+        return;
+      }
+
+      const found = loadListings().find(x => String(x.id) === targetId);
+      if (!found || !found.phone) {
+        if (msgEl) {
+          msgEl.style.color = "#c62828";
+          msgEl.textContent = "تعذر العثور على رقم المعلن لهذا العرض.";
+        }
+        return;
+      }
+
+      revealedPhonesSession[targetId] = String(found.phone);
+      closeOathModal();
+      renderListings();
+    }
+
+    function toggleSaleStatusQuick(id) {
+      const list = loadListings();
+      const idx = list.findIndex(x => String(x.id) === String(id));
+      if (idx === -1) return;
+      if (!isListingOwner(list[idx])) {
+        alert("تغيير حالة العرض متاح لمنشئ المعروض فقط.");
+        return;
+      }
+      const current = list[idx].saleStatus === "تم البيع" ? "تم البيع" : "متوفر";
+      list[idx].saleStatus = current === "متوفر" ? "تم البيع" : "متوفر";
+      saveListings(list);
+      renderListings();
+    }
+
     function renderListings() {
       const all = loadListings();
       const q = String((document.getElementById("searchInput") || {}).value || "").trim().toLowerCase();
@@ -824,7 +1059,7 @@
 
       const filtered = all.filter(item => {
         const matchType = !t || item.type === t;
-        const hay = `${item.title || ""} ${item.area || ""} ${item.desc || ""} ${item.type || ""}`.toLowerCase();
+        const hay = `${item.title || ""} ${item.area || ""} ${item.desc || ""} ${item.type || ""} ${item.saleStatus || ""}`.toLowerCase();
         const matchQuery = !q || hay.includes(q);
         return matchType && matchQuery;
       });
@@ -841,21 +1076,46 @@
         const imgs = Array.isArray(item.images) && item.images.length ? item.images : [""];
         const firstImg = resolveImageSrc(imgs[0]);
         const fallbackImg = resolveImageSrc("");
+        const isSold = item.saleStatus === "تم البيع";
+        const statusClass = isSold ? "status-sold" : "status-available";
+        const statusLabel = isSold ? "انباع / تم البيع" : "ما زال متوفر";
+
+        const canEdit = isListingOwner(item);
+        const canDelete = isAdminLoggedIn || isListingOwner(item);
+        const isPhoneRevealed = Boolean(revealedPhonesSession[String(item.id)]);
+
+        const phoneSectionHtml = isPhoneRevealed
+          ? `<div class="phone-reveal-box">رقم المعلن: ${escapeHtml(revealedPhonesSession[String(item.id)])}</div>`
+          : `<button type="button" class="btn-primary" style="width:100%;margin:8px 0;" onclick="openOathModal('${escapeHtml(item.id)}')">أداء القسم لإظهار رقم المعلن</button>`;
+
+        const ownerToggleBtn = canEdit
+          ? `<button type="button" class="btn-soft" onclick="toggleSaleStatusQuick('${escapeHtml(item.id)}')">${isSold ? "جعله متوفر" : "تحديد كـ انباع"}</button>`
+          : "";
+
+        const editBtn = canEdit
+          ? `<button type="button" class="btn-soft" onclick="openModal('${escapeHtml(item.id)}')">تعديل</button>`
+          : "";
+
+        const deleteBtn = canDelete
+          ? `<button type="button" class="btn-danger" onclick="deleteListing('${escapeHtml(item.id)}')">حذف</button>`
+          : "";
 
         return `
           <article class="listing-card">
             <img class="listing-img" src="${escapeHtml(firstImg)}" alt="${escapeHtml(item.title)}" onerror="this.onerror=null;this.src='${fallbackImg}';" />
             <div class="listing-body">
               <div>
+                <span class="status-badge ${statusClass}">${statusLabel}</span>
                 <h3 style="font-size:1.02rem;color:#111827;">${escapeHtml(item.title)}</h3>
                 <div class="listing-meta">${escapeHtml(item.area)} — النوع: <strong>${escapeHtml(item.type)}</strong></div>
                 <div class="listing-price">المبلغ: ${escapeHtml(item.price)}</div>
-                <p style="font-size:0.88rem;color:#374151;margin-bottom:8px;">${escapeHtml(item.desc || "")}</p>
-                <div style="font-size:0.86rem;color:#14532d;font-weight:bold;margin-bottom:10px;">رقم المعلن: ${escapeHtml(item.phone)}</div>
+                <p style="font-size:0.88rem;color:#374151;margin-bottom:6px;">${escapeHtml(item.desc || "")}</p>
+                ${phoneSectionHtml}
               </div>
               <div class="row-flex">
-                <button type="button" class="btn-soft" onclick="openModal('${escapeHtml(item.id)}')">تعديل</button>
-                <button type="button" class="btn-danger" onclick="deleteListing('${escapeHtml(item.id)}')">حذف</button>
+                ${editBtn}
+                ${ownerToggleBtn}
+                ${deleteBtn}
               </div>
             </div>
           </article>
@@ -883,6 +1143,7 @@
       document.getElementById("itemTitle").value = "";
       document.getElementById("itemArea").value = "";
       document.getElementById("itemType").value = "بيع";
+      document.getElementById("itemSaleStatus").value = "متوفر";
       document.getElementById("itemPrice").value = "";
       document.getElementById("itemPhone").value = "";
       document.getElementById("itemImages").value = "";
@@ -891,17 +1152,21 @@
 
       if (editId) {
         const found = loadListings().find(x => String(x.id) === String(editId));
-        if (found) {
-          if (titleEl) titleEl.textContent = "تعديل المعروض";
-          document.getElementById("editListingId").value = found.id;
-          document.getElementById("itemTitle").value = found.title || "";
-          document.getElementById("itemArea").value = found.area || "";
-          document.getElementById("itemType").value = found.type || "بيع";
-          document.getElementById("itemPrice").value = found.price || "";
-          document.getElementById("itemPhone").value = found.phone || "";
-          document.getElementById("itemImages").value = Array.isArray(found.images) ? found.images.join("\n") : "";
-          document.getElementById("itemDesc").value = found.desc || "";
+        if (!found) return;
+        if (!isListingOwner(found)) {
+          alert("عذراً، تعديل هذا المعروض متاح فقط لمن قام بإنشائه.");
+          return;
         }
+        if (titleEl) titleEl.textContent = "تعديل المعروض";
+        document.getElementById("editListingId").value = found.id;
+        document.getElementById("itemTitle").value = found.title || "";
+        document.getElementById("itemArea").value = found.area || "";
+        document.getElementById("itemType").value = found.type || "بيع";
+        document.getElementById("itemSaleStatus").value = found.saleStatus === "تم البيع" ? "تم البيع" : "متوفر";
+        document.getElementById("itemPrice").value = found.price || "";
+        document.getElementById("itemPhone").value = found.phone || "";
+        document.getElementById("itemImages").value = Array.isArray(found.images) ? found.images.join("\n") : "";
+        document.getElementById("itemDesc").value = found.desc || "";
       } else if (titleEl) {
         titleEl.textContent = "إضافة معروض جديد";
       }
@@ -921,6 +1186,7 @@
       const title = document.getElementById("itemTitle").value.trim();
       const area = document.getElementById("itemArea").value.trim();
       const type = document.getElementById("itemType").value.trim() || "بيع";
+      const saleStatus = document.getElementById("itemSaleStatus").value === "تم البيع" ? "تم البيع" : "متوفر";
       const price = document.getElementById("itemPrice").value.trim();
       const phone = document.getElementById("itemPhone").value.trim();
       const desc = document.getElementById("itemDesc").value.trim();
@@ -932,23 +1198,52 @@
       if (!title || !area || !price || !phone) {
         if (formMsg) {
           formMsg.style.color = "#c62828";
-          formMsg.textContent = "يرجى تعبئة العنوان والمنطقة والمبلغ ورقم المعلن.";
+          formMsg.textContent = "يرجى تعبئة العنوان والمنطقة والمبلغ ورقم المعلن (شرط أساسي).";
+        }
+        return;
+      }
+
+      if (hasAnyDigit(desc)) {
+        if (formMsg) {
+          formMsg.style.color = "#c62828";
+          formMsg.textContent = "يُمنع كتابة أي أرقام داخل تفاصيل العرض. يرجى إزالة الأرقام من التفاصيل.";
         }
         return;
       }
 
       const list = loadListings();
+      const myOwnerKey = getOrCreateOwnerKey();
+
       if (editId) {
         const idx = list.findIndex(x => String(x.id) === String(editId));
         if (idx !== -1) {
-          list[idx] = { ...list[idx], title, area, type, price, phone, images, desc };
+          if (!isListingOwner(list[idx])) {
+            if (formMsg) {
+              formMsg.style.color = "#c62828";
+              formMsg.textContent = "لا تملك صلاحية تعديل هذا المعروض.";
+            }
+            return;
+          }
+          list[idx] = {
+            ...list[idx],
+            title,
+            area,
+            type,
+            saleStatus,
+            price,
+            phone,
+            images,
+            desc
+          };
         }
       } else {
         list.unshift({
           id: `item-${Date.now()}`,
+          ownerKey: myOwnerKey,
           title,
           area,
           type,
+          saleStatus,
           price,
           phone,
           images,
@@ -966,12 +1261,29 @@
     }
 
     function deleteListing(id) {
-      const updated = loadListings().filter(x => String(x.id) !== String(id));
+      const list = loadListings();
+      const target = list.find(x => String(x.id) === String(id));
+      if (!target) return;
+      if (!isAdminLoggedIn && !isListingOwner(target)) {
+        alert("الحذف متاح لمنشئ المعروض أو للأدمن من لوحة الإدارة.");
+        return;
+      }
+      const updated = list.filter(x => String(x.id) !== String(id));
       saveListings(updated);
       renderListings();
     }
 
+    function clearAllListingsByAdmin() {
+      if (!isAdminLoggedIn) {
+        alert("افتح لوحة الأدمن أولاً لتفعيل صلاحية الحذف.");
+        return;
+      }
+      saveListings([]);
+      renderListings();
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
+      getOrCreateOwnerKey();
       applyTickerText(loadTickerText());
       syncAdminTickerUI();
       syncAdminTokenUI(false);
