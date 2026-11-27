@@ -31,6 +31,19 @@
       line-height: 1.6;
     }
 
+    .datetime-bar {
+      background: #092614;
+      color: #dcfce7;
+      padding: 6px 14px;
+      font-size: 0.84rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
     .top-banner {
       background: linear-gradient(135deg, var(--primary-dark), var(--primary), var(--accent));
       color: #ffffff;
@@ -62,7 +75,7 @@
     .ticker-text {
       display: inline-block;
       padding-right: 100%;
-      animation: tickerMove 22s linear infinite;
+      animation: tickerMove 45s linear infinite;
     }
 
     @keyframes tickerMove {
@@ -249,13 +262,19 @@
   </style>
 </head>
 <body>
+  <div class="datetime-bar">
+    <span id="liveClockDisplay">الساعة: --:--:--</span>
+    <span id="liveGregorianDateDisplay">التاريخ: --</span>
+    <span id="liveHijriDateDisplay">الهجري: --</span>
+  </div>
+
   <header class="top-banner">
     <h1>عدن للعقارات والسيارات</h1>
     <p>منصة عرض العقارات والسيارات في عدن - https://aden-aqar.github.io/aden-aqar/</p>
   </header>
 
   <div class="ticker-wrap">
-    <div class="ticker-text">
+    <div class="ticker-text" id="newsTickerText">
       مرحباً بكم في منصة عدن للعقارات والسيارات - تصفح أحدث العروض العقارية والمركبات في عدن - إدارة النشر والصور عبر لوحة الأدمن
     </div>
   </div>
@@ -275,7 +294,18 @@
     </section>
 
     <section class="card hidden" id="adminPanel">
-      <div class="card-title">إعدادات GitHub ورمز الوصول (Token)</div>
+      <div class="card-title">إعدادات الأدمن والشريط الإخباري ورمز GitHub</div>
+
+      <label for="adminTickerInput">نص الشريط الإخباري (يستطيع الأدمن وضع أي خبر هنا)</label>
+      <input type="text" id="adminTickerInput" placeholder="اكتب الخبر أو التنبيه الذي يظهر في الشريط المتحرك..." />
+      <div class="row-flex" style="margin-bottom: 14px;">
+        <button type="button" class="btn-primary" onclick="saveAdminTicker()">حفظ خبر الشريط</button>
+        <button type="button" class="btn-soft" onclick="resetAdminTicker()">استعادة النص الافتراضي</button>
+      </div>
+      <div id="adminTickerStatus" style="font-size: 0.88rem; font-weight: bold; margin-bottom: 12px;"></div>
+
+      <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 12px 0;" />
+
       <label for="adminGhTokenInput">رمز GitHub Token (للمستودع aden-aqar/aden-aqar)</label>
       <input type="password" id="adminGhTokenInput" placeholder="ألصق رمز GitHub Token هنا (github_pat_... أو ghp_...)" autocomplete="off" />
       <div class="row-flex" style="margin-bottom: 8px;">
@@ -465,6 +495,7 @@
       if (!panel) return;
       panel.classList.toggle("hidden");
       syncAdminTokenUI(true);
+      syncAdminTickerUI();
     }
 
     function setUploadButtonsState(isUploading) {
@@ -595,6 +626,120 @@
         syncAdminTokenUI(true);
       }
     }
+    const TICKER_STORAGE_KEY = "aden_aqar_custom_ticker_v1";
+    const DEFAULT_TICKER_TEXT = "مرحباً بكم في منصة عدن للعقارات والسيارات - تصفح أحدث العروض العقارية والمركبات في عدن - إدارة النشر والصور عبر لوحة الأدمن";
+
+    function loadTickerText() {
+      try {
+        const saved = localStorage.getItem(TICKER_STORAGE_KEY);
+        if (saved && String(saved).trim()) {
+          return String(saved).trim();
+        }
+      } catch (_) {}
+      return DEFAULT_TICKER_TEXT;
+    }
+
+    function applyTickerText(text) {
+      const clean = String(text || "").trim() || DEFAULT_TICKER_TEXT;
+      const tickerEl = document.getElementById("newsTickerText");
+      if (tickerEl) {
+        tickerEl.textContent = clean;
+      }
+    }
+
+    function syncAdminTickerUI() {
+      const inputEl = document.getElementById("adminTickerInput");
+      if (inputEl) {
+        inputEl.value = loadTickerText();
+      }
+    }
+
+    function saveAdminTicker() {
+      const inputEl = document.getElementById("adminTickerInput");
+      const statusEl = document.getElementById("adminTickerStatus");
+      const val = String(inputEl ? inputEl.value : "").trim();
+      if (!val) {
+        if (statusEl) {
+          statusEl.style.color = "#c62828";
+          statusEl.textContent = "اكتب نص الخبر أولاً قبل الحفظ.";
+        }
+        return;
+      }
+      try {
+        localStorage.setItem(TICKER_STORAGE_KEY, val);
+      } catch (_) {}
+      applyTickerText(val);
+      if (statusEl) {
+        statusEl.style.color = "#14532d";
+        statusEl.textContent = "تم حفظ خبر الشريط الإخباري وتحديثه.";
+      }
+    }
+
+    function resetAdminTicker() {
+      try {
+        localStorage.removeItem(TICKER_STORAGE_KEY);
+      } catch (_) {}
+      applyTickerText(DEFAULT_TICKER_TEXT);
+      syncAdminTickerUI();
+      const statusEl = document.getElementById("adminTickerStatus");
+      if (statusEl) {
+        statusEl.style.color = "#14532d";
+        statusEl.textContent = "تمت استعادة النص الافتراضي للشريط الإخباري.";
+      }
+    }
+
+    function updateClockAndDates() {
+      const now = new Date();
+      const clockEl = document.getElementById("liveClockDisplay");
+      const gregEl = document.getElementById("liveGregorianDateDisplay");
+      const hijriEl = document.getElementById("liveHijriDateDisplay");
+
+      if (clockEl) {
+        let timeStr = "";
+        try {
+          timeStr = now.toLocaleTimeString("ar-YE", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
+          });
+        } catch (_) {
+          timeStr = now.toLocaleTimeString("ar");
+        }
+        clockEl.textContent = `الساعة: ${timeStr}`;
+      }
+
+      if (gregEl) {
+        let gregStr = "";
+        try {
+          gregStr = now.toLocaleDateString("ar-YE", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+          });
+        } catch (_) {
+          gregStr = now.toLocaleDateString("ar");
+        }
+        gregEl.textContent = `التاريخ: ${gregStr}`;
+      }
+
+      if (hijriEl) {
+        let hijriStr = "";
+        try {
+          hijriStr = new Intl.DateTimeFormat("ar-SA-u-ca-islamic", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+          }).format(now);
+        } catch (_) {
+          hijriStr = now.toLocaleDateString("ar");
+        }
+        hijriEl.textContent = `الهجري: ${hijriStr}`;
+      }
+    }
+
     const LISTINGS_STORAGE_KEY = "aden_aqar_listings_v1";
 
     const DEFAULT_LISTINGS = [
@@ -827,8 +972,12 @@
     }
 
     window.addEventListener("DOMContentLoaded", () => {
+      applyTickerText(loadTickerText());
+      syncAdminTickerUI();
       syncAdminTokenUI(false);
       setUploadButtonsState(false);
+      updateClockAndDates();
+      setInterval(updateClockAndDates, 1000);
       renderListings();
     });
   </script>
