@@ -415,6 +415,7 @@
           <div id="itemSaveMsg" style="margin-top:8px; font-size:13px; font-weight:800;"></div>
         </form>
       </section>
+
       <section class="panel-box search-side">
         <h2>البحث عن عقار أو سيارة وطلب الشراء</h2>
         <form id="searchBuyForm" onsubmit="applySearchAndSaveRequest(event)">
@@ -517,645 +518,647 @@
       </form>
     </div>
   </div>
-<script>
-const DB_URL = "https://krater360-2019f-default-rtdb.firebaseio.com";
-const OWNER_PASSCODE = "9270268911";
 
-const GH_ACCOUNT = "krater360";
-const GH_PROJECT = "aden-aqar";
-const GH_BRANCH = "main";
-const GH_FOLDER = "images";
-const GH_TOKEN_STORAGE = "aden_sooq_gh_token";
+  <script>
+    const DB_URL = "https://aden-aqar-market-default-rtdb.firebaseio.com";
+    const OWNER_PASSCODE = "9270268911";
 
-let allListings = [];
-let editingItemId = "";
-let currentPhoneModalItem = null;
-const expandedCardsSet = new Set();
+    const GH_ACCOUNT = "krater360";
+    const GH_PROJECT = "aden-aqar";
+    const GH_BRANCH = "main";
+    const GH_FOLDER = "images";
+    const GH_TOKEN_STORAGE = "aden_sooq_gh_token";
 
-function normalizeArabic(str) {
-  return String(str || "")
-    .replace(/[\u064B-\u065F\u0670]/g, "")
-    .replace(/[أإآ]/g, "ا")
-    .replace(/ى/g, "ي")
-    .replace(/ة/g, "ه")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+    let allListings = [];
+    let editingItemId = "";
+    let currentPhoneModalItem = null;
+    const expandedCardsSet = new Set();
 
-function escapeHtml(str) {
-  return String(str || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+    function normalizeArabic(str) {
+      return String(str || "")
+        .replace(/[\u064B-\u065F\u0670]/g, "")
+        .replace(/[أإآ]/g, "ا")
+        .replace(/ى/g, "ي")
+        .replace(/ة/g, "ه")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
 
-function hasAnyDigit(str) {
-  return /[0-9٠-٩]/.test(String(str || ""));
-}
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
 
-function stripAllDigits(str) {
-  return String(str || "").replace(/[0-9٠-٩]/g, "");
-}
+    function hasAnyDigit(str) {
+      return /[0-9٠-٩]/.test(String(str || ""));
+    }
 
-function blockDigitsInField(el, warnId) {
-  const warnEl = document.getElementById(warnId);
-  if (hasAnyDigit(el.value)) {
-    el.value = stripAllDigits(el.value);
-    if (warnEl) warnEl.textContent = "يُمنع كتابة أي أرقام داخل نص الإعلان.";
-  } else if (warnEl) {
-    warnEl.textContent = "";
-  }
-}
+    function stripAllDigits(str) {
+      return String(str || "").replace(/[0-9٠-٩]/g, "");
+    }
 
-function getTodayDateText() {
-  try {
-    return new Date().toLocaleDateString("ar-YE", { timeZone: "Asia/Aden" });
-  } catch (_) {
-    return new Date().toISOString().slice(0, 10);
-  }
-}
+    function blockDigitsInField(el, warnId) {
+      const warnEl = document.getElementById(warnId);
+      if (hasAnyDigit(el.value)) {
+        el.value = stripAllDigits(el.value);
+        if (warnEl) warnEl.textContent = "يُمنع كتابة أي أرقام داخل نص الإعلان.";
+      } else if (warnEl) {
+        warnEl.textContent = "";
+      }
+    }
 
-function toggleOwnerAdmin() {
-  if (document.body.classList.contains("owner-admin-mode")) {
-    document.body.classList.remove("owner-admin-mode");
-    renderListingsList(allListings);
-    return;
-  }
-  const code = prompt("أدخل رمز الأدمن للتعديل والحذف والرد على الرسائل:");
-  if (code === OWNER_PASSCODE) {
-    document.body.classList.add("owner-admin-mode");
-    loadAdminData();
-    renderListingsList(allListings);
-    alert("تم تفعيل وضع الأدمن");
-  } else if (code !== null) {
-    alert("الرمز غير صحيح");
-  }
-}
+    function getTodayDateText() {
+      try {
+        return new Date().toLocaleDateString("ar-YE", { timeZone: "Asia/Aden" });
+      } catch (_) {
+        return new Date().toISOString().slice(0, 10);
+      }
+    }
 
-function loadAdminData() {
-  loadAqarMessages();
-  loadAqarOffers();
-}
+    function toggleOwnerAdmin() {
+      if (document.body.classList.contains("owner-admin-mode")) {
+        document.body.classList.remove("owner-admin-mode");
+        renderListingsList(allListings);
+        return;
+      }
+      const code = prompt("أدخل رمز الأدمن للتعديل والحذف والرد على الرسائل:");
+      if (code === OWNER_PASSCODE) {
+        document.body.classList.add("owner-admin-mode");
+        loadAdminData();
+        renderListingsList(allListings);
+        alert("تم تفعيل وضع الأدمن");
+      } else if (code !== null) {
+        alert("الرمز غير صحيح");
+      }
+    }
 
-function fileToB64(file) {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result || "").split(",")[1] || "");
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
-}
+    function loadAdminData() {
+      loadAqarMessages();
+      loadAqarOffers();
+    }
 
-async function uploadSelectedImagesToGitHub() {
-  const fileEl = document.getElementById("itemFileUpload");
-  const imgsEl = document.getElementById("itemImages");
-  const msgEl = document.getElementById("uploadMsg");
+    function fileToB64(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result || "").split(",")[1] || "");
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
 
-  if (!fileEl.files || !fileEl.files.length) {
-    msgEl.textContent = "اختر صورة أو أكثر أولاً.";
-    return;
-  }
+    async function uploadSelectedImagesToGitHub() {
+      const fileEl = document.getElementById("itemFileUpload");
+      const imgsEl = document.getElementById("itemImages");
+      const msgEl = document.getElementById("uploadMsg");
 
-  let token = String(localStorage.getItem(GH_TOKEN_STORAGE) || "").replace(/[^A-Za-z0-9_]/g, "").trim();
-  if (!token) {
-    const entered = prompt("أدخل رمز GitHub Token لرفع الصور:");
-    if (!entered) return;
-    token = String(entered).replace(/[^A-Za-z0-9_]/g, "").trim();
-    localStorage.setItem(GH_TOKEN_STORAGE, token);
-  }
+      if (!fileEl.files || !fileEl.files.length) {
+        msgEl.textContent = "اختر صورة أو أكثر أولاً.";
+        return;
+      }
 
-  const urls = [];
-  for (let i = 0; i < fileEl.files.length; i++) {
-    const f = fileEl.files[i];
-    msgEl.textContent = `جاري تحميل الصورة ${i + 1} من ${fileEl.files.length}...`;
-    const base64 = await fileToB64(f);
-    const ext = (f.name.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "") || "jpg";
-    const name = `${Date.now()}-${i + 1}-sooq.${ext}`;
+      let token = String(localStorage.getItem(GH_TOKEN_STORAGE) || "").replace(/[^A-Za-z0-9_]/g, "").trim();
+      if (!token) {
+        const entered = prompt("أدخل رمز GitHub Token لرفع الصور:");
+        if (!entered) return;
+        token = String(entered).replace(/[^A-Za-z0-9_]/g, "").trim();
+        localStorage.setItem(GH_TOKEN_STORAGE, token);
+      }
 
-    const res = await fetch(`https://api.github.com/repos/${GH_ACCOUNT}/${GH_PROJECT}/contents/${GH_FOLDER}/${name}`, {
-      method: "PUT",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/vnd.github+json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ message: `Upload ${name}`, content: base64, branch: GH_BRANCH })
-    });
-    if (!res.ok) throw new Error("فشل رفع الصورة");
-    urls.push(`${GH_FOLDER}/${name}`);
-  }
+      const urls = [];
+      for (let i = 0; i < fileEl.files.length; i++) {
+        const f = fileEl.files[i];
+        msgEl.textContent = `جاري تحميل الصورة ${i + 1} من ${fileEl.files.length}...`;
+        const base64 = await fileToB64(f);
+        const ext = (f.name.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "") || "jpg";
+        const name = `${Date.now()}-${i + 1}-sooq.${ext}`;
 
-  const existing = imgsEl.value.split(/\n+/).map(s => s.trim()).filter(Boolean);
-  imgsEl.value = existing.concat(urls).join("\n");
-  fileEl.value = "";
-  msgEl.textContent = `تم تحميل ${urls.length} صورة بنجاح.`;
-}
+        const res = await fetch(`https://api.github.com/repos/${GH_ACCOUNT}/${GH_PROJECT}/contents/${GH_FOLDER}/${name}`, {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github+json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ message: `Upload ${name}`, content: base64, branch: GH_BRANCH })
+        });
+        if (!res.ok) throw new Error("فشل رفع الصورة");
+        urls.push(`${GH_FOLDER}/${name}`);
+      }
 
-function saveListingItem(event) {
-  event.preventDefault();
+      const existing = imgsEl.value.split(/\n+/).map(s => s.trim()).filter(Boolean);
+      imgsEl.value = existing.concat(urls).join("\n");
+      fileEl.value = "";
+      msgEl.textContent = `تم تحميل ${urls.length} صورة بنجاح.`;
+    }
 
-  const nameEl = document.getElementById("itemName");
-  const locEl = document.getElementById("itemLocation");
-  const specsEl = document.getElementById("itemSpecs");
-  const phoneEl = document.getElementById("sellerPhone");
+    function saveListingItem(event) {
+      event.preventDefault();
 
-  blockDigitsInField(nameEl, "nameDigitWarn");
-  blockDigitsInField(locEl, "locDigitWarn");
-  blockDigitsInField(specsEl, "specsDigitWarn");
+      const nameEl = document.getElementById("itemName");
+      const locEl = document.getElementById("itemLocation");
+      const specsEl = document.getElementById("itemSpecs");
+      const phoneEl = document.getElementById("sellerPhone");
 
-  const name = nameEl.value.trim();
-  const location = locEl.value.trim();
-  const specs = specsEl.value.trim();
-  const type = document.getElementById("itemType").value;
-  const price = document.getElementById("itemPrice").value.trim();
-  const phone = phoneEl.value.trim();
-  const images = document.getElementById("itemImages").value.split(/\n+/).map(u => u.trim()).filter(Boolean);
+      blockDigitsInField(nameEl, "nameDigitWarn");
+      blockDigitsInField(locEl, "locDigitWarn");
+      blockDigitsInField(specsEl, "specsDigitWarn");
 
-  const msgEl = document.getElementById("itemSaveMsg");
+      const name = nameEl.value.trim();
+      const location = locEl.value.trim();
+      const specs = specsEl.value.trim();
+      const type = document.getElementById("itemType").value;
+      const price = document.getElementById("itemPrice").value.trim();
+      const phone = phoneEl.value.trim();
+      const images = document.getElementById("itemImages").value.split(/\n+/).map(u => u.trim()).filter(Boolean);
 
-  if (!phone) {
-    msgEl.style.color = "#c62828";
-    msgEl.textContent = "رقم المعلن شرط أساسي لإضافة الإعلان.";
-    phoneEl.focus();
-    return;
-  }
+      const msgEl = document.getElementById("itemSaveMsg");
 
-  if (hasAnyDigit(name) || hasAnyDigit(location) || hasAnyDigit(specs)) {
-    msgEl.style.color = "#c62828";
-    msgEl.textContent = "يُمنع كتابة أي أرقام في الاسم أو الموقع أو المواصفات.";
-    return;
-  }
+      if (!phone) {
+        msgEl.style.color = "#c62828";
+        msgEl.textContent = "رقم المعلن شرط أساسي لإضافة الإعلان.";
+        phoneEl.focus();
+        return;
+      }
 
-  const btnEl = document.getElementById("saveItemBtn");
-  btnEl.disabled = true;
-  msgEl.style.color = "#0f4e9a";
-  msgEl.textContent = "جاري الحفظ...";
+      if (hasAnyDigit(name) || hasAnyDigit(location) || hasAnyDigit(specs)) {
+        msgEl.style.color = "#c62828";
+        msgEl.textContent = "يُمنع كتابة أي أرقام في الاسم أو الموقع أو المواصفات.";
+        return;
+      }
 
-  const id = editingItemId || ("market-" + Date.now());
-  const existingItem = allListings.find(x => x.id === id);
-  const record = {
-    id,
-    name,
-    location,
-    specs,
-    type,
-    price,
-    phone,
-    images,
-    views: Number(existingItem?.views || 0),
-    dateText: existingItem?.dateText || getTodayDateText(),
-    createdAt: existingItem?.createdAt || Date.now(),
-    updatedAt: Date.now()
-  };
+      const btnEl = document.getElementById("saveItemBtn");
+      btnEl.disabled = true;
+      msgEl.style.color = "#0f4e9a";
+      msgEl.textContent = "جاري الحفظ...";
 
-  fetch(`${DB_URL}/marketItems/${encodeURIComponent(id)}.json`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(record)
-  })
-    .then(r => {
-      if (!r.ok) throw new Error();
-      document.getElementById("itemForm").reset();
+      const id = editingItemId || ("market-" + Date.now());
+      const existingItem = allListings.find(x => x.id === id);
+      const record = {
+        id,
+        name,
+        location,
+        specs,
+        type,
+        price,
+        phone,
+        images,
+        views: Number(existingItem?.views || 0),
+        dateText: existingItem?.dateText || getTodayDateText(),
+        createdAt: existingItem?.createdAt || Date.now(),
+        updatedAt: Date.now()
+      };
+
+      fetch(`${DB_URL}/marketItems/${encodeURIComponent(id)}.json`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(record)
+      })
+        .then(r => {
+          if (!r.ok) throw new Error();
+          document.getElementById("itemForm").reset();
+          editingItemId = "";
+          msgEl.style.color = "#1b5e20";
+          msgEl.textContent = "تم حفظ ونشر المعروض بنجاح.";
+          loadListings();
+        })
+        .catch(() => {
+          msgEl.style.color = "#c62828";
+          msgEl.textContent = "تعذر الحفظ، تحقق من الاتصال أو قواعد Firebase.";
+        })
+        .finally(() => { btnEl.disabled = false; });
+    }
+
+    function startEditItem(id) {
+      const item = allListings.find(x => x.id === id);
+      if (!item) return;
+      editingItemId = item.id;
+      document.getElementById("itemName").value = stripAllDigits(item.name || "");
+      document.getElementById("itemLocation").value = stripAllDigits(item.location || "");
+      document.getElementById("itemSpecs").value = stripAllDigits(item.specs || "");
+      document.getElementById("itemType").value = item.type || "بيع";
+      document.getElementById("itemPrice").value = item.price || "";
+      document.getElementById("sellerPhone").value = item.phone || "";
+      document.getElementById("itemImages").value = (item.images || []).join("\n");
+      document.getElementById("itemSaveMsg").style.color = "#0d47a1";
+      document.getElementById("itemSaveMsg").textContent = "وضع تعديل المعروض نشط — اضغط حفظ ونشر المعروض لتأكيد التعديل.";
+      window.scrollTo({ top: 120, behavior: "smooth" });
+    }
+
+    function cancelEditItem() {
       editingItemId = "";
-      msgEl.style.color = "#1b5e20";
-      msgEl.textContent = "تم حفظ ونشر المعروض بنجاح.";
-      loadListings();
-    })
-    .catch(() => {
-      msgEl.style.color = "#c62828";
-      msgEl.textContent = "تعذر الحفظ، تحقق من الاتصال أو قواعد Firebase.";
-    })
-    .finally(() => { btnEl.disabled = false; });
-}
+      document.getElementById("itemForm").reset();
+      document.getElementById("itemSaveMsg").textContent = "";
+    }
 
-function startEditItem(id) {
-  const item = allListings.find(x => x.id === id);
-  if (!item) return;
-  editingItemId = item.id;
-  document.getElementById("itemName").value = stripAllDigits(item.name || "");
-  document.getElementById("itemLocation").value = stripAllDigits(item.location || "");
-  document.getElementById("itemSpecs").value = stripAllDigits(item.specs || "");
-  document.getElementById("itemType").value = item.type || "بيع";
-  document.getElementById("itemPrice").value = item.price || "";
-  document.getElementById("sellerPhone").value = item.phone || "";
-  document.getElementById("itemImages").value = (item.images || []).join("\n");
-  document.getElementById("itemSaveMsg").style.color = "#0d47a1";
-  document.getElementById("itemSaveMsg").textContent = "وضع تعديل المعروض نشط — اضغط حفظ ونشر المعروض لتأكيد التعديل.";
-  window.scrollTo({ top: 120, behavior: "smooth" });
-}
+    function deleteItemById(id) {
+      if (!confirm("هل تريد حذف هذا الإعلان نهائياً؟")) return;
+      fetch(`${DB_URL}/marketItems/${encodeURIComponent(id)}.json`, { method: "DELETE" })
+        .then(() => {
+          expandedCardsSet.delete(id);
+          loadListings();
+        })
+        .catch(() => alert("تعذر حذف الإعلان"));
+    }
 
-function cancelEditItem() {
-  editingItemId = "";
-  document.getElementById("itemForm").reset();
-  document.getElementById("itemSaveMsg").textContent = "";
-}
+    function openPhoneOathModal(itemId) {
+      const item = allListings.find(x => x.id === itemId);
+      if (!item) return;
+      currentPhoneModalItem = item;
+      document.getElementById("phoneOathItemTitle").textContent = "المعروض: " + (item.name || "");
+      document.getElementById("phoneOathInput").value = "";
+      document.getElementById("phoneOathError").textContent = "";
+      const box = document.getElementById("revealedPhoneBox");
+      box.classList.remove("show");
+      box.innerHTML = "";
+      document.getElementById("phoneOathModal").classList.add("open");
+    }
 
-function deleteItemById(id) {
-  if (!confirm("هل تريد حذف هذا الإعلان نهائياً؟")) return;
-  fetch(`${DB_URL}/marketItems/${encodeURIComponent(id)}.json`, { method: "DELETE" })
-    .then(() => {
-      expandedCardsSet.delete(id);
-      loadListings();
-    })
-    .catch(() => alert("تعذر حذف الإعلان"));
-}
+    function closePhoneOathModal() {
+      currentPhoneModalItem = null;
+      document.getElementById("phoneOathModal").classList.remove("open");
+    }
 
-function openPhoneOathModal(itemId) {
-  const item = allListings.find(x => x.id === itemId);
-  if (!item) return;
-  currentPhoneModalItem = item;
-  document.getElementById("phoneOathItemTitle").textContent = "المعروض: " + (item.name || "");
-  document.getElementById("phoneOathInput").value = "";
-  document.getElementById("phoneOathError").textContent = "";
-  const box = document.getElementById("revealedPhoneBox");
-  box.classList.remove("show");
-  box.innerHTML = "";
-  document.getElementById("phoneOathModal").classList.add("open");
-}
+    function revealSellerPhoneWithOath() {
+      if (!currentPhoneModalItem) return;
+      const val = normalizeArabic(document.getElementById("phoneOathInput").value);
+      const errEl = document.getElementById("phoneOathError");
+      const box = document.getElementById("revealedPhoneBox");
 
-function closePhoneOathModal() {
-  currentPhoneModalItem = null;
-  document.getElementById("phoneOathModal").classList.remove("open");
-}
-
-function revealSellerPhoneWithOath() {
-  if (!currentPhoneModalItem) return;
-  const val = normalizeArabic(document.getElementById("phoneOathInput").value);
-  const errEl = document.getElementById("phoneOathError");
-  const box = document.getElementById("revealedPhoneBox");
-
-  if (val !== "اقسم بالله") {
-    errEl.textContent = "يرجى كتابة عبارة (أقسم بالله) بشكل صحيح لإظهار رقم المعلن.";
-    box.classList.remove("show");
-    return;
-  }
-
-  errEl.textContent = "";
-  box.innerHTML = `رقم المعلن: <span style="user-select:all;">${escapeHtml(currentPhoneModalItem.phone || "غير متوفر")}</span>`;
-  box.classList.add("show");
-}
-function openOfferPriceModal(itemId, itemTitle) {
-  document.getElementById("offerTargetItemId").value = itemId || "";
-  document.getElementById("offerTargetItemName").value = itemTitle || "";
-  document.getElementById("offerModalItemTitle").textContent = "المعروض: " + (itemTitle || "");
-  document.getElementById("offerPriceStatus").textContent = "";
-  document.getElementById("offerPriceModal").classList.add("open");
-}
-
-function closeOfferPriceModal() {
-  document.getElementById("offerPriceModal").classList.remove("open");
-}
-
-function submitOfferedPrice(event) {
-  event.preventDefault();
-  const itemId = document.getElementById("offerTargetItemId").value;
-  const itemTitle = document.getElementById("offerTargetItemName").value;
-  const offererName = document.getElementById("offererName").value.trim();
-  const offererPhone = document.getElementById("offererPhone").value.trim();
-  const offeredPrice = document.getElementById("offeredPriceValue").value.trim();
-  const notes = document.getElementById("offerNotes").value.trim();
-  const statusEl = document.getElementById("offerPriceStatus");
-
-  const offerId = "aqaroffer-" + Date.now();
-  const payload = {
-    id: offerId,
-    itemId,
-    itemTitle,
-    offererName,
-    offererPhone,
-    offeredPrice,
-    notes,
-    sentAt: Date.now()
-  };
-
-  fetch(`${DB_URL}/aqarOffers/${encodeURIComponent(offerId)}.json`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  })
-    .then(r => {
-      if (!r.ok) throw new Error();
-      statusEl.style.color = "#1b5e20";
-      statusEl.textContent = "تم تسجيل القيمة المطروحة بنجاح.";
-      setTimeout(() => {
-        closeOfferPriceModal();
-        document.getElementById("offererName").value = "";
-        document.getElementById("offererPhone").value = "";
-        document.getElementById("offeredPriceValue").value = "";
-        document.getElementById("offerNotes").value = "";
-        if (document.body.classList.contains("owner-admin-mode")) loadAqarOffers();
-      }, 600);
-    })
-    .catch(() => {
-      statusEl.style.color = "#c62828";
-      statusEl.textContent = "تعذر إرسال القيمة المطروحة.";
-    });
-}
-
-function loadAqarOffers() {
-  const box = document.getElementById("aqarOffersList");
-  if (!box) return;
-  fetch(`${DB_URL}/aqarOffers.json`)
-    .then(r => r.json())
-    .then(data => {
-      if (!data || typeof data !== "object") {
-        box.innerHTML = "<p style='color:#64748b; font-size:13px;'>لا توجد أسعار مطروحة حالياً.</p>";
+      if (val !== "اقسم بالله") {
+        errEl.textContent = "يرجى كتابة عبارة (أقسم بالله) بشكل صحيح لإظهار رقم المعلن.";
+        box.classList.remove("show");
         return;
       }
-      const list = Object.entries(data)
-        .map(([k, v]) => ({ ...(v || {}), id: (v && v.id) || k }))
-        .sort((a, b) => (b.sentAt || 0) - (a.sentAt || 0));
 
-      box.innerHTML = `<h3 style="margin:6px 0; color:var(--amber); font-size:15px;">القيم والأسعار المطروحة (${list.length})</h3>` + list.map(o => `
-        <div class="offer-item-card">
-          <div style="font-weight:800; color:#92400e;">${escapeHtml(o.offererName || "مقدم عرض")} — <span style="font-size:12px;">${escapeHtml(o.offererPhone || "")}</span></div>
-          <div style="font-size:12px; font-weight:700; color:#334155; margin:3px 0;">المعروض: ${escapeHtml(o.itemTitle || "")}</div>
-          <div style="font-size:14px; font-weight:900; color:var(--green);">القيمة المطروحة: ${escapeHtml(o.offeredPrice || "")}</div>
-          ${o.notes ? `<p style="margin:6px 0 0; font-size:13px;">${escapeHtml(o.notes)}</p>` : ""}
-          <div class="btn-row" style="margin-top:8px;">
-            <button type="button" class="btn btn-red" onclick="deleteAqarOffer('${escapeHtml(o.id)}')">حذف</button>
-          </div>
-        </div>
-      `).join("");
-    })
-    .catch(() => {
-      box.innerHTML = "<p style='color:#c62828; font-size:13px;'>تعذر تحميل الأسعار المطروحة.</p>";
-    });
-}
+      errEl.textContent = "";
+      box.innerHTML = `رقم المعلن: <span style="user-select:all;">${escapeHtml(currentPhoneModalItem.phone || "غير متوفر")}</span>`;
+      box.classList.add("show");
+    }
 
-function deleteAqarOffer(offerId) {
-  if (!confirm("هل تريد حذف هذا العرض السعري؟")) return;
-  fetch(`${DB_URL}/aqarOffers/${encodeURIComponent(offerId)}.json`, { method: "DELETE" })
-    .then(() => loadAqarOffers());
-}
+    function openOfferPriceModal(itemId, itemTitle) {
+      document.getElementById("offerTargetItemId").value = itemId || "";
+      document.getElementById("offerTargetItemName").value = itemTitle || "";
+      document.getElementById("offerModalItemTitle").textContent = "المعروض: " + (itemTitle || "");
+      document.getElementById("offerPriceStatus").textContent = "";
+      document.getElementById("offerPriceModal").classList.add("open");
+    }
 
-function openSendMessageModal(itemId, itemTitle) {
-  document.getElementById("msgTargetItemId").value = itemId || "";
-  document.getElementById("msgTargetItemName").value = itemTitle || "";
-  document.getElementById("modalItemTitle").textContent = "المعروض: " + (itemTitle || "");
-  document.getElementById("visitorMsgStatus").textContent = "";
-  document.getElementById("sendMsgModal").classList.add("open");
-}
+    function closeOfferPriceModal() {
+      document.getElementById("offerPriceModal").classList.remove("open");
+    }
 
-function closeSendMessageModal() {
-  document.getElementById("sendMsgModal").classList.remove("open");
-}
+    function submitOfferedPrice(event) {
+      event.preventDefault();
+      const itemId = document.getElementById("offerTargetItemId").value;
+      const itemTitle = document.getElementById("offerTargetItemName").value;
+      const offererName = document.getElementById("offererName").value.trim();
+      const offererPhone = document.getElementById("offererPhone").value.trim();
+      const offeredPrice = document.getElementById("offeredPriceValue").value.trim();
+      const notes = document.getElementById("offerNotes").value.trim();
+      const statusEl = document.getElementById("offerPriceStatus");
 
-function submitItemMessage(event) {
-  event.preventDefault();
-  const itemId = document.getElementById("msgTargetItemId").value;
-  const itemTitle = document.getElementById("msgTargetItemName").value;
-  const senderName = document.getElementById("visitorMsgName").value.trim();
-  const senderPhone = document.getElementById("visitorMsgPhone").value.trim();
-  const messageText = document.getElementById("visitorMsgText").value.trim();
-  const statusEl = document.getElementById("visitorMsgStatus");
+      const offerId = "aqaroffer-" + Date.now();
+      const payload = {
+        id: offerId,
+        itemId,
+        itemTitle,
+        offererName,
+        offererPhone,
+        offeredPrice,
+        notes,
+        sentAt: Date.now()
+      };
 
-  const msgId = "aqarmsg-" + Date.now();
-  const payload = {
-    id: msgId,
-    itemId,
-    itemTitle,
-    senderName,
-    senderPhone,
-    messageText,
-    adminReply: "",
-    sentAt: Date.now()
-  };
+      fetch(`${DB_URL}/aqarOffers/${encodeURIComponent(offerId)}.json`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+        .then(r => {
+          if (!r.ok) throw new Error();
+          statusEl.style.color = "#1b5e20";
+          statusEl.textContent = "تم تسجيل القيمة المطروحة بنجاح.";
+          setTimeout(() => {
+            closeOfferPriceModal();
+            document.getElementById("offererName").value = "";
+            document.getElementById("offererPhone").value = "";
+            document.getElementById("offeredPriceValue").value = "";
+            document.getElementById("offerNotes").value = "";
+            if (document.body.classList.contains("owner-admin-mode")) loadAqarOffers();
+          }, 600);
+        })
+        .catch(() => {
+          statusEl.style.color = "#c62828";
+          statusEl.textContent = "تعذر إرسال القيمة المطروحة.";
+        });
+    }
 
-  fetch(`${DB_URL}/aqarMessages/${encodeURIComponent(msgId)}.json`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  })
-    .then(r => {
-      if (!r.ok) throw new Error();
-      statusEl.style.color = "#1b5e20";
-      statusEl.textContent = "تم إرسال رسالتك بنجاح.";
-      setTimeout(() => {
-        closeSendMessageModal();
-        document.getElementById("visitorMsgName").value = "";
-        document.getElementById("visitorMsgPhone").value = "";
-        document.getElementById("visitorMsgText").value = "";
-        if (document.body.classList.contains("owner-admin-mode")) loadAqarMessages();
-      }, 600);
-    })
-    .catch(() => {
-      statusEl.style.color = "#c62828";
-      statusEl.textContent = "تعذر إرسال الرسالة.";
-    });
-}
+    function loadAqarOffers() {
+      const box = document.getElementById("aqarOffersList");
+      if (!box) return;
+      fetch(`${DB_URL}/aqarOffers.json`)
+        .then(r => r.json())
+        .then(data => {
+          if (!data || typeof data !== "object") {
+            box.innerHTML = "<p style='color:#64748b; font-size:13px;'>لا توجد أسعار مطروحة حالياً.</p>";
+            return;
+          }
+          const list = Object.entries(data)
+            .map(([k, v]) => ({ ...(v || {}), id: (v && v.id) || k }))
+            .sort((a, b) => (b.sentAt || 0) - (a.sentAt || 0));
 
-function loadAqarMessages() {
-  const box = document.getElementById("aqarMessagesList");
-  if (!box) return;
-  fetch(`${DB_URL}/aqarMessages.json`)
-    .then(r => r.json())
-    .then(data => {
-      if (!data || typeof data !== "object") {
-        box.innerHTML = "<p style='color:#64748b; font-size:13px;'>لا توجد رسائل حالياً.</p>";
-        return;
-      }
-      const list = Object.entries(data)
-        .map(([k, v]) => ({ ...(v || {}), id: (v && v.id) || k }))
-        .sort((a, b) => (b.sentAt || 0) - (a.sentAt || 0));
-
-      box.innerHTML = `<h3 style="margin:6px 0; color:var(--blue); font-size:15px;">الرسائل (${list.length})</h3>` + list.map(m => {
-        const replyHtml = m.adminReply
-          ? `<div class="msg-reply-box"><strong>رد الأدمن:</strong> ${escapeHtml(m.adminReply)}</div>`
-          : "";
-        return `
-          <div class="msg-item-card">
-            <div style="font-weight:800; color:var(--blue);">${escapeHtml(m.senderName || "مرسل")} — <span style="font-size:12px; color:#475569;">${escapeHtml(m.senderPhone || "")}</span></div>
-            <div style="font-size:12px; font-weight:700; color:#991b1b; margin:3px 0;">بخصوص: ${escapeHtml(m.itemTitle || "معروض")}</div>
-            <p style="margin:6px 0; font-size:14px;">${escapeHtml(m.messageText || "")}</p>
-            ${replyHtml}
-            <div style="margin-top:8px;">
-              <textarea id="replyInput-${escapeHtml(m.id)}" rows="2" placeholder="اكتب رد الأدمن هنا...">${escapeHtml(m.adminReply || "")}</textarea>
-              <div class="btn-row" style="margin-top:6px;">
-                <button type="button" class="btn btn-green" onclick="sendAdminReply('${escapeHtml(m.id)}')">حفظ الرد</button>
-                <button type="button" class="btn btn-red" onclick="deleteAqarMessage('${escapeHtml(m.id)}')">حذف الرسالة</button>
+          box.innerHTML = `<h3 style="margin:6px 0; color:var(--amber); font-size:15px;">القيم والأسعار المطروحة (${list.length})</h3>` + list.map(o => `
+            <div class="offer-item-card">
+              <div style="font-weight:800; color:#92400e;">${escapeHtml(o.offererName || "مقدم عرض")} — <span style="font-size:12px;">${escapeHtml(o.offererPhone || "")}</span></div>
+              <div style="font-size:12px; font-weight:700; color:#334155; margin:3px 0;">المعروض: ${escapeHtml(o.itemTitle || "")}</div>
+              <div style="font-size:14px; font-weight:900; color:var(--green);">القيمة المطروحة: ${escapeHtml(o.offeredPrice || "")}</div>
+              ${o.notes ? `<p style="margin:6px 0 0; font-size:13px;">${escapeHtml(o.notes)}</p>` : ""}
+              <div class="btn-row" style="margin-top:8px;">
+                <button type="button" class="btn btn-red" onclick="deleteAqarOffer('${escapeHtml(o.id)}')">حذف</button>
               </div>
             </div>
-          </div>
-        `;
-      }).join("");
-    })
-    .catch(() => {
-      box.innerHTML = "<p style='color:#c62828; font-size:13px;'>تعذر تحميل الرسائل.</p>";
-    });
-}
+          `).join("");
+        })
+        .catch(() => {
+          box.innerHTML = "<p style='color:#c62828; font-size:13px;'>تعذر تحميل الأسعار المطروحة.</p>";
+        });
+    }
 
-function sendAdminReply(msgId) {
-  const ta = document.getElementById("replyInput-" + msgId);
-  if (!ta) return;
-  const replyText = ta.value.trim();
-  fetch(`${DB_URL}/aqarMessages/${encodeURIComponent(msgId)}/adminReply.json`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(replyText)
-  })
-    .then(() => {
-      alert("تم حفظ الرد");
-      loadAqarMessages();
-    })
-    .catch(() => alert("تعذر حفظ الرد"));
-}
+    function deleteAqarOffer(offerId) {
+      if (!confirm("هل تريد حذف هذا العرض السعري؟")) return;
+      fetch(`${DB_URL}/aqarOffers/${encodeURIComponent(offerId)}.json`, { method: "DELETE" })
+        .then(() => loadAqarOffers());
+    }
 
-function deleteAqarMessage(msgId) {
-  if (!confirm("هل تريد حذف هذه الرسالة؟")) return;
-  fetch(`${DB_URL}/aqarMessages/${encodeURIComponent(msgId)}.json`, { method: "DELETE" })
-    .then(() => loadAqarMessages());
-}
+    function openSendMessageModal(itemId, itemTitle) {
+      document.getElementById("msgTargetItemId").value = itemId || "";
+      document.getElementById("msgTargetItemName").value = itemTitle || "";
+      document.getElementById("modalItemTitle").textContent = "المعروض: " + (itemTitle || "");
+      document.getElementById("visitorMsgStatus").textContent = "";
+      document.getElementById("sendMsgModal").classList.add("open");
+    }
 
-function parseNumericPrice(val) {
-  const digits = String(val || "").replace(/[^\d.]/g, "");
-  const num = Number(digits);
-  return Number.isFinite(num) && num > 0 ? num : null;
-}
+    function closeSendMessageModal() {
+      document.getElementById("sendMsgModal").classList.remove("open");
+    }
 
-function applySearchAndSaveRequest(event) {
-  event.preventDefault();
-  const qName = normalizeArabic(document.getElementById("searchName").value);
-  const qLoc = normalizeArabic(document.getElementById("searchLocation").value);
-  const qSpecs = normalizeArabic(document.getElementById("searchSpecs").value);
-  const qPriceRaw = document.getElementById("targetBuyPrice").value.trim();
-  const qPriceNum = parseNumericPrice(qPriceRaw);
+    function submitItemMessage(event) {
+      event.preventDefault();
+      const itemId = document.getElementById("msgTargetItemId").value;
+      const itemTitle = document.getElementById("msgTargetItemName").value;
+      const senderName = document.getElementById("visitorMsgName").value.trim();
+      const senderPhone = document.getElementById("visitorMsgPhone").value.trim();
+      const messageText = document.getElementById("visitorMsgText").value.trim();
+      const statusEl = document.getElementById("visitorMsgStatus");
 
-  const filtered = allListings.filter(item => {
-    const matchName = !qName || normalizeArabic(item.name).includes(qName);
-    const matchLoc = !qLoc || normalizeArabic(item.location).includes(qLoc);
-    const matchSpecs = !qSpecs || normalizeArabic(item.specs).includes(qSpecs);
-    const itemPriceNum = parseNumericPrice(item.price);
-    const matchPrice = !qPriceNum || !itemPriceNum || itemPriceNum <= qPriceNum;
-    return matchName && matchLoc && matchSpecs && matchPrice;
-  });
+      const msgId = "aqarmsg-" + Date.now();
+      const payload = {
+        id: msgId,
+        itemId,
+        itemTitle,
+        senderName,
+        senderPhone,
+        messageText,
+        adminReply: "",
+        sentAt: Date.now()
+      };
 
-  renderListingsList(filtered);
-  document.getElementById("searchStatusMsg").textContent = `نتائج البحث المطابقة: ${filtered.length}`;
-}
+      fetch(`${DB_URL}/aqarMessages/${encodeURIComponent(msgId)}.json`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+        .then(r => {
+          if (!r.ok) throw new Error();
+          statusEl.style.color = "#1b5e20";
+          statusEl.textContent = "تم إرسال رسالتك بنجاح.";
+          setTimeout(() => {
+            closeSendMessageModal();
+            document.getElementById("visitorMsgName").value = "";
+            document.getElementById("visitorMsgPhone").value = "";
+            document.getElementById("visitorMsgText").value = "";
+            if (document.body.classList.contains("owner-admin-mode")) loadAqarMessages();
+          }, 600);
+        })
+        .catch(() => {
+          statusEl.style.color = "#c62828";
+          statusEl.textContent = "تعذر إرسال الرسالة.";
+        });
+    }
 
-function resetSearchFilters() {
-  document.getElementById("searchBuyForm").reset();
-  document.getElementById("searchStatusMsg").textContent = "";
-  renderListingsList(allListings);
-}
+    function loadAqarMessages() {
+      const box = document.getElementById("aqarMessagesList");
+      if (!box) return;
+      fetch(`${DB_URL}/aqarMessages.json`)
+        .then(r => r.json())
+        .then(data => {
+          if (!data || typeof data !== "object") {
+            box.innerHTML = "<p style='color:#64748b; font-size:13px;'>لا توجد رسائل حالياً.</p>";
+            return;
+          }
+          const list = Object.entries(data)
+            .map(([k, v]) => ({ ...(v || {}), id: (v && v.id) || k }))
+            .sort((a, b) => (b.sentAt || 0) - (a.sentAt || 0));
 
-function toggleMoreDetails(itemId) {
-  const cardEl = document.getElementById("card-" + itemId);
-  const btnEl = document.getElementById("moreBtn-" + itemId);
-  const item = allListings.find(x => x.id === itemId);
-  if (!cardEl || !item) return;
+          box.innerHTML = `<h3 style="margin:6px 0; color:var(--blue); font-size:15px;">الرسائل (${list.length})</h3>` + list.map(m => {
+            const replyHtml = m.adminReply
+              ? `<div class="msg-reply-box"><strong>رد الأدمن:</strong> ${escapeHtml(m.adminReply)}</div>`
+              : "";
+            return `
+              <div class="msg-item-card">
+                <div style="font-weight:800; color:var(--blue);">${escapeHtml(m.senderName || "مرسل")} — <span style="font-size:12px; color:#475569;">${escapeHtml(m.senderPhone || "")}</span></div>
+                <div style="font-size:12px; font-weight:700; color:#991b1b; margin:3px 0;">بخصوص: ${escapeHtml(m.itemTitle || "معروض")}</div>
+                <p style="margin:6px 0; font-size:14px;">${escapeHtml(m.messageText || "")}</p>
+                ${replyHtml}
+                <div style="margin-top:8px;">
+                  <textarea id="replyInput-${escapeHtml(m.id)}" rows="2" placeholder="اكتب رد الأدمن هنا...">${escapeHtml(m.adminReply || "")}</textarea>
+                  <div class="btn-row" style="margin-top:6px;">
+                    <button type="button" class="btn btn-green" onclick="sendAdminReply('${escapeHtml(m.id)}')">حفظ الرد</button>
+                    <button type="button" class="btn btn-red" onclick="deleteAqarMessage('${escapeHtml(m.id)}')">حذف الرسالة</button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join("");
+        })
+        .catch(() => {
+          box.innerHTML = "<p style='color:#c62828; font-size:13px;'>تعذر تحميل الرسائل.</p>";
+        });
+    }
 
-  const isCurrentlyExpanded = expandedCardsSet.has(itemId);
-  if (isCurrentlyExpanded) {
-    expandedCardsSet.delete(itemId);
-    cardEl.classList.remove("expanded");
-    if (btnEl) btnEl.textContent = "المزيد";
-  } else {
-    expandedCardsSet.add(itemId);
-    cardEl.classList.add("expanded");
-    if (btnEl) btnEl.textContent = "إخفاء التفاصيل";
+    function sendAdminReply(msgId) {
+      const ta = document.getElementById("replyInput-" + msgId);
+      if (!ta) return;
+      const replyText = ta.value.trim();
+      fetch(`${DB_URL}/aqarMessages/${encodeURIComponent(msgId)}/adminReply.json`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(replyText)
+      })
+        .then(() => {
+          alert("تم حفظ الرد");
+          loadAqarMessages();
+        })
+        .catch(() => alert("تعذر حفظ الرد"));
+    }
 
-    const nextViews = Number(item.views || 0) + 1;
-    item.views = nextViews;
-    const viewsBadge = document.getElementById("viewsBadge-" + itemId);
-    if (viewsBadge) viewsBadge.textContent = `المشاهدات: ${nextViews}`;
+    function deleteAqarMessage(msgId) {
+      if (!confirm("هل تريد حذف هذه الرسالة؟")) return;
+      fetch(`${DB_URL}/aqarMessages/${encodeURIComponent(msgId)}.json`, { method: "DELETE" })
+        .then(() => loadAqarMessages());
+    }
 
-    fetch(`${DB_URL}/marketItems/${encodeURIComponent(itemId)}/views.json`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(nextViews)
-    }).catch(() => {});
-  }
-}
+    function parseNumericPrice(val) {
+      const digits = String(val || "").replace(/[^\d.]/g, "");
+      const num = Number(digits);
+      return Number.isFinite(num) && num > 0 ? num : null;
+    }
 
-function renderListingsList(list) {
-  const container = document.getElementById("listingsContainer");
-  const countEl = document.getElementById("totalItemsCount");
-  if (countEl) countEl.textContent = String(list.length);
+    function applySearchAndSaveRequest(event) {
+      event.preventDefault();
+      const qName = normalizeArabic(document.getElementById("searchName").value);
+      const qLoc = normalizeArabic(document.getElementById("searchLocation").value);
+      const qSpecs = normalizeArabic(document.getElementById("searchSpecs").value);
+      const qPriceRaw = document.getElementById("targetBuyPrice").value.trim();
+      const qPriceNum = parseNumericPrice(qPriceRaw);
 
-  if (!list.length) {
-    container.innerHTML = "<div class='big-white-card'><p style='text-align:center; margin:0; color:#475569;'>لا توجد معروضات مطابقة حالياً.</p></div>";
-    return;
-  }
+      const filtered = allListings.filter(item => {
+        const matchName = !qName || normalizeArabic(item.name).includes(qName);
+        const matchLoc = !qLoc || normalizeArabic(item.location).includes(qLoc);
+        const matchSpecs = !qSpecs || normalizeArabic(item.specs).includes(qSpecs);
+        const itemPriceNum = parseNumericPrice(item.price);
+        const matchPrice = !qPriceNum || !itemPriceNum || itemPriceNum <= qPriceNum;
+        return matchName && matchLoc && matchSpecs && matchPrice;
+      });
 
-  container.innerHTML = list.map((item, idx) => {
-    const serialNumber = item.serialNumber || (idx + 1);
-    const viewsCount = Number(item.views || 0);
-    const isExpanded = expandedCardsSet.has(item.id);
-    const imgs = Array.isArray(item.images) ? item.images : [];
-    const photosHtml = imgs.length
-      ? `<div class="item-photos">${imgs.map(url => `<img src="${escapeHtml(url)}" alt="${escapeHtml(stripAllDigits(item.name || ""))}" onclick="window.open(this.src, '_blank')">`).join("")}</div>`
-      : "<p style='font-size:13px; color:#64748b; margin:6px 0 10px;'>لا توجد صور مرفقة لهذا الإعلان.</p>";
+      renderListingsList(filtered);
+      document.getElementById("searchStatusMsg").textContent = `نتائج البحث المطابقة: ${filtered.length}`;
+    }
 
-    const safeTitle = escapeHtml(stripAllDigits(item.name || ""));
-    const safeLocation = escapeHtml(stripAllDigits(item.location || ""));
-    const safeSpecs = escapeHtml(stripAllDigits(item.specs || ""));
+    function resetSearchFilters() {
+      document.getElementById("searchBuyForm").reset();
+      document.getElementById("searchStatusMsg").textContent = "";
+      renderListingsList(allListings);
+    }
 
-    return `
-      <article class="big-white-card ${isExpanded ? "expanded" : ""}" id="card-${escapeHtml(item.id)}">
-        <div class="card-top">
-          <span class="serial-tag">رقم المعروض: #${serialNumber}</span>
-          <span class="type-tag">النوع: ${escapeHtml(item.type || "بيع")}</span>
-          <span class="date-tag">التاريخ: ${escapeHtml(item.dateText || "")}</span>
-          <span class="admin-views-tag" id="viewsBadge-${escapeHtml(item.id)}">المشاهدات: ${viewsCount}</span>
-        </div>
+    function toggleMoreDetails(itemId) {
+      const cardEl = document.getElementById("card-" + itemId);
+      const btnEl = document.getElementById("moreBtn-" + itemId);
+      const item = allListings.find(x => x.id === itemId);
+      if (!cardEl || !item) return;
 
-        <h3 class="item-main-title">${safeTitle}</h3>
-        <div class="item-price-highlight">المبلغ المعروض به: ${escapeHtml(item.price || "")}</div>
+      const isCurrentlyExpanded = expandedCardsSet.has(itemId);
+      if (isCurrentlyExpanded) {
+        expandedCardsSet.delete(itemId);
+        cardEl.classList.remove("expanded");
+        if (btnEl) btnEl.textContent = "المزيد";
+      } else {
+        expandedCardsSet.add(itemId);
+        cardEl.classList.add("expanded");
+        if (btnEl) btnEl.textContent = "إخفاء التفاصيل";
 
-        <button type="button" class="btn btn-blue" id="moreBtn-${escapeHtml(item.id)}" onclick="toggleMoreDetails('${escapeHtml(item.id)}')">${isExpanded ? "إخفاء التفاصيل" : "المزيد"}</button>
+        const nextViews = Number(item.views || 0) + 1;
+        item.views = nextViews;
+        const viewsBadge = document.getElementById("viewsBadge-" + itemId);
+        if (viewsBadge) viewsBadge.textContent = `المشاهدات: ${nextViews}`;
 
-        <div class="more-details-panel">
-          <div class="item-meta-line">الموقع: ${safeLocation}</div>
-          <div class="item-specs">${safeSpecs}</div>
-          ${photosHtml}
-        </div>
+        fetch(`${DB_URL}/marketItems/${encodeURIComponent(itemId)}/views.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(nextViews)
+        }).catch(() => {});
+      }
+    }
 
-        <div class="card-bottom">
-          <span>تواصل آمن عبر الموقع</span>
-          <div class="card-actions-group">
-            <button type="button" class="btn btn-amber" onclick="openOfferPriceModal('${escapeHtml(item.id)}', '${safeTitle}')">طرح قيمة العقار</button>
-            <button type="button" class="btn btn-red" onclick="openPhoneOathModal('${escapeHtml(item.id)}')">معرفة رقم المعلن</button>
-            <button type="button" class="btn btn-blue" onclick="openSendMessageModal('${escapeHtml(item.id)}', '${safeTitle}')">إرسال رسالة</button>
-            <div class="owner-controls">
-              <button type="button" class="btn btn-green" onclick="startEditItem('${escapeHtml(item.id)}')">تعديل</button>
-              <button type="button" class="btn btn-red" onclick="deleteItemById('${escapeHtml(item.id)}')">حذف</button>
-            </div>
-          </div>
-        </div>
-      </article>
-    `;
-  }).join("");
-}
+    function renderListingsList(list) {
+      const container = document.getElementById("listingsContainer");
+      const countEl = document.getElementById("totalItemsCount");
+      if (countEl) countEl.textContent = String(list.length);
 
-function loadListings() {
-  fetch(`${DB_URL}/marketItems.json`)
-    .then(r => r.json())
-    .then(data => {
-      if (!data || typeof data !== "object") {
-        allListings = [];
-        renderListingsList([]);
+      if (!list.length) {
+        container.innerHTML = "<div class='big-white-card'><p style='text-align:center; margin:0; color:#475569;'>لا توجد معروضات مطابقة حالياً.</p></div>";
         return;
       }
-      const ordered = Object.entries(data)
-        .map(([key, val]) => ({ ...(val || {}), id: (val && val.id) || key }))
-        .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
-      allListings = ordered.map((item, index) => ({
-        ...item,
-        serialNumber: index + 1
-      })).reverse();
+      container.innerHTML = list.map((item, idx) => {
+        const serialNumber = item.serialNumber || (idx + 1);
+        const viewsCount = Number(item.views || 0);
+        const isExpanded = expandedCardsSet.has(item.id);
+        const imgs = Array.isArray(item.images) ? item.images : [];
+        const photosHtml = imgs.length
+          ? `<div class="item-photos">${imgs.map(url => `<img src="${escapeHtml(url)}" alt="${escapeHtml(stripAllDigits(item.name || ""))}" onclick="window.open(this.src, '_blank')">`).join("")}</div>`
+          : "<p style='font-size:13px; color:#64748b; margin:6px 0 10px;'>لا توجد صور مرفقة لهذا الإعلان.</p>";
 
-      renderListingsList(allListings);
-    })
-    .catch(() => {
-      document.getElementById("listingsContainer").innerHTML = "<div class='big-white-card'><p style='text-align:center; margin:0; color:#c62828;'>تعذر تحميل المعروضات من Firebase.</p></div>";
-    });
-}
+        const safeTitle = escapeHtml(stripAllDigits(item.name || ""));
+        const safeLocation = escapeHtml(stripAllDigits(item.location || ""));
+        const safeSpecs = escapeHtml(stripAllDigits(item.specs || ""));
 
-loadListings();
-</script>
+        return `
+          <article class="big-white-card ${isExpanded ? "expanded" : ""}" id="card-${escapeHtml(item.id)}">
+            <div class="card-top">
+              <span class="serial-tag">رقم المعروض: #${serialNumber}</span>
+              <span class="type-tag">النوع: ${escapeHtml(item.type || "بيع")}</span>
+              <span class="date-tag">التاريخ: ${escapeHtml(item.dateText || "")}</span>
+              <span class="admin-views-tag" id="viewsBadge-${escapeHtml(item.id)}">المشاهدات: ${viewsCount}</span>
+            </div>
+
+            <h3 class="item-main-title">${safeTitle}</h3>
+            <div class="item-price-highlight">المبلغ المعروض به: ${escapeHtml(item.price || "")}</div>
+
+            <button type="button" class="btn btn-blue" id="moreBtn-${escapeHtml(item.id)}" onclick="toggleMoreDetails('${escapeHtml(item.id)}')">${isExpanded ? "إخفاء التفاصيل" : "المزيد"}</button>
+
+            <div class="more-details-panel">
+              <div class="item-meta-line">الموقع: ${safeLocation}</div>
+              <div class="item-specs">${safeSpecs}</div>
+              ${photosHtml}
+            </div>
+
+            <div class="card-bottom">
+              <span>تواصل آمن عبر الموقع</span>
+              <div class="card-actions-group">
+                <button type="button" class="btn btn-amber" onclick="openOfferPriceModal('${escapeHtml(item.id)}', '${safeTitle}')">طرح قيمة العقار</button>
+                <button type="button" class="btn btn-red" onclick="openPhoneOathModal('${escapeHtml(item.id)}')">معرفة رقم المعلن</button>
+                <button type="button" class="btn btn-blue" onclick="openSendMessageModal('${escapeHtml(item.id)}', '${safeTitle}')">إرسال رسالة</button>
+                <div class="owner-controls">
+                  <button type="button" class="btn btn-green" onclick="startEditItem('${escapeHtml(item.id)}')">تعديل</button>
+                  <button type="button" class="btn btn-red" onclick="deleteItemById('${escapeHtml(item.id)}')">حذف</button>
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function loadListings() {
+      fetch(`${DB_URL}/marketItems.json`)
+        .then(r => r.json())
+        .then(data => {
+          if (!data || typeof data !== "object") {
+            allListings = [];
+            renderListingsList([]);
+            return;
+          }
+          const ordered = Object.entries(data)
+            .map(([key, val]) => ({ ...(val || {}), id: (val && val.id) || key }))
+            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+          allListings = ordered.map((item, index) => ({
+            ...item,
+            serialNumber: index + 1
+          })).reverse();
+
+          renderListingsList(allListings);
+        })
+        .catch(() => {
+          document.getElementById("listingsContainer").innerHTML = "<div class='big-white-card'><p style='text-align:center; margin:0; color:#c62828;'>تعذر تحميل المعروضات من Firebase.</p></div>";
+        });
+    }
+
+    loadListings();
+  </script>
 </body>
 </html>
