@@ -10,6 +10,7 @@
       --blue2: #1565c0;
       --red: #d32f2f;
       --green: #1b5e20;
+      --green2: #2e7d32;
       --purple: #5b21b6;
       --bg: #eef3fb;
       --card: #ffffff;
@@ -27,11 +28,11 @@
     }
 
     .mega-hero {
-      background: linear-gradient(135deg, #07285e 0%, var(--blue) 55%, var(--blue2) 100%);
+      background: linear-gradient(135deg, #0d3b1e 0%, #1b5e20 55%, #2e7d32 100%);
       color: #ffffff;
       padding: 26px 16px;
-      border-bottom: 6px solid var(--red);
-      box-shadow: 0 10px 28px rgba(7, 40, 94, 0.25);
+      border-bottom: 6px solid #4ade80;
+      box-shadow: 0 10px 28px rgba(13, 59, 30, 0.25);
     }
     .wrap {
       max-width: 1040px;
@@ -55,11 +56,11 @@
     .hero-sub {
       margin: 6px 0 0;
       font-size: 14px;
-      color: #e3f2fd;
+      color: #dcfce7;
     }
     .hero-btn {
       background: rgba(255, 255, 255, 0.16);
-      border: 1px solid rgba(255, 255, 255, 0.38);
+      border: 1px solid rgba(255, 255, 255, 0.42);
       color: #ffffff;
       padding: 9px 14px;
       border-radius: 9px;
@@ -133,6 +134,10 @@
       color: #ffffff;
       cursor: pointer;
     }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
     .btn-blue { background: var(--blue2); }
     .btn-green { background: var(--green); }
     .btn-red { background: var(--red); }
@@ -198,7 +203,7 @@
       width: 100%;
       padding: 18px;
       box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
-      border-top: 4px solid var(--blue);
+      border-top: 4px solid var(--green2);
       max-height: 90vh;
       overflow-y: auto;
     }
@@ -226,7 +231,7 @@
     }
     .revealed-phone-box.show { display: block; }
 
-    .listings-section { margin-top: 28px; }
+    .listings-section { margin-top: 28px; margin-bottom: 36px; }
     .listings-header {
       display: flex;
       justify-content: space-between;
@@ -236,7 +241,6 @@
       margin-bottom: 14px;
     }
     .listings-header h2 { margin: 0; font-size: 20px; color: var(--blue); }
-    .requests-header h2 { margin: 0; font-size: 20px; color: #991b1b; }
     .count-pill {
       background: #ffffff;
       border: 1px solid var(--border);
@@ -256,9 +260,6 @@
       margin: 0 auto 24px;
       box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
     }
-    .request-card {
-      border-right-color: var(--red);
-    }
     .card-top {
       display: flex;
       justify-content: space-between;
@@ -276,9 +277,6 @@
       border-radius: 999px;
       font-size: 12px;
       font-weight: 900;
-    }
-    .request-tag {
-      background: #991b1b;
     }
     .type-tag {
       background: #fef2f2;
@@ -414,8 +412,11 @@
           <div style="margin-top:8px; padding:8px; background:#f8fafc; border:1px dashed var(--border); border-radius:8px;">
             <label style="margin-top:0;">تحميل عدة صور للعقار من الجهاز:</label>
             <input type="file" id="itemFileUpload" accept="image/*" multiple>
-            <button type="button" class="btn btn-blue" style="margin-top:6px;" onclick="uploadSelectedImagesToGitHub()">تحميل الصور المختارة</button>
-            <div id="uploadMsg" style="margin-top:4px; font-size:12px; font-weight:700; color:var(--blue);"></div>
+            <div class="btn-row" style="margin-top:8px;">
+              <button type="button" class="btn btn-blue" id="uploadImgsBtn" onclick="uploadSelectedImagesToGitHub()">تحميل الصور المختارة</button>
+              <button type="button" class="btn btn-red" id="stopUploadBtn" onclick="stopImageUpload()" disabled>إيقاف التحميل</button>
+            </div>
+            <div id="uploadMsg" style="margin-top:6px; font-size:12px; font-weight:700; color:var(--blue);"></div>
           </div>
 
           <div class="btn-row">
@@ -427,29 +428,26 @@
       </section>
 
       <section class="panel-box search-side">
-        <h2>البحث عن عقار أو سيارة ونشر طلب الشراء</h2>
-        <form id="searchBuyForm" onsubmit="applySearchAndSaveRequest(event)">
+        <h2>البحث عن عقار أو سيارة</h2>
+        <form id="searchBuyForm" onsubmit="applySearchFilters(event)">
           <label for="searchName">اسم العقار أو السيارة المطلوبة (بدون أرقام)</label>
-          <input type="text" id="searchName" placeholder="مثال: شقة، أرض، باص، هايلوكس..." oninput="blockDigitsInField(this, 'reqNameDigitWarn')">
-          <div id="reqNameDigitWarn" class="field-hint"></div>
+          <input type="text" id="searchName" placeholder="مثال: شقة، أرض، باص، هايلوكس..." oninput="blockDigitsInField(this, 'searchNameDigitWarn')">
+          <div id="searchNameDigitWarn" class="field-hint"></div>
 
           <label for="searchLocation">الموقع المطلوب (بدون أرقام)</label>
-          <input type="text" id="searchLocation" placeholder="مثال: عدن - خورمكسر أو كريتر" oninput="blockDigitsInField(this, 'reqLocDigitWarn')">
-          <div id="reqLocDigitWarn" class="field-hint"></div>
+          <input type="text" id="searchLocation" placeholder="مثال: عدن - خورمكسر أو كريتر" oninput="blockDigitsInField(this, 'searchLocDigitWarn')">
+          <div id="searchLocDigitWarn" class="field-hint"></div>
 
           <label for="searchSpecs">المواصفات المطلوبة (بدون أرقام)</label>
-          <textarea id="searchSpecs" placeholder="اكتب المواصفات التي تبحث عنها كتابةً دون أرقام..." oninput="blockDigitsInField(this, 'reqSpecsDigitWarn')"></textarea>
-          <div id="reqSpecsDigitWarn" class="field-hint"></div>
+          <textarea id="searchSpecs" placeholder="اكتب المواصفات التي تبحث عنها كتابةً دون أرقام..." oninput="blockDigitsInField(this, 'searchSpecsDigitWarn')"></textarea>
+          <div id="searchSpecsDigitWarn" class="field-hint"></div>
 
-          <label for="targetBuyPrice">السعر المراد الشراء به</label>
+          <label for="targetBuyPrice">السعر المراد الشراء به (حد أقصى)</label>
           <input type="text" id="targetBuyPrice" placeholder="مثال: 1,500,000 أو حد أقصى 3,000,000">
 
-          <label for="requesterPhone">رقم صاحب الطلب (يظهر للزوار بعد القسم وللأدمن مباشرة)</label>
-          <input type="tel" id="requesterPhone" placeholder="مثال: 771234567 (مطلوب لحفظ الطلب في الموقع)">
-
           <div class="btn-row">
-            <button type="submit" class="btn btn-red" id="saveRequestBtn">بحث ونشر الطلب بالموقع</button>
-            <button type="button" class="btn btn-gray" onclick="resetSearchFilters()">عرض كل المعروضات</button>
+            <button type="submit" class="btn btn-red">بحث وتصفية المعروضات</button>
+            <button type="button" class="btn btn-gray" onclick="resetSearchFilters()">عرض الكل</button>
           </div>
           <div id="searchStatusMsg" style="margin-top:8px; font-size:12px; font-weight:800; color:#0d47a1;"></div>
         </form>
@@ -465,30 +463,20 @@
         <p style="text-align:center; color:var(--muted);">جاري تحميل المعروضات...</p>
       </div>
     </section>
-
-    <section class="listings-section">
-      <div class="listings-header requests-header">
-        <h2>طلبات البحث والشراء المعروضة بالموقع</h2>
-        <span class="count-pill">إجمالي الطلبات: <span id="totalRequestsCount">0</span></span>
-      </div>
-      <div id="requestsContainer">
-        <p style="text-align:center; color:var(--muted);">جاري تحميل طلبات البحث والشراء...</p>
-      </div>
-    </section>
   </main>
-  <!-- نافذة القسم لمعرفة رقم صاحب الإعلان أو الطلب -->
+  <!-- نافذة القسم لمعرفة رقم المعلن -->
   <div class="modal-backdrop" id="phoneOathModal">
     <div class="modal-card">
-      <h3 style="margin:0 0 8px; color:var(--red);">القسم لمعرفة الرقم</h3>
+      <h3 style="margin:0 0 8px; color:var(--red);">القسم لمعرفة رقم المعلن</h3>
       <div id="phoneOathItemTitle" style="font-size:13px; font-weight:800; color:#334155; margin-bottom:10px;"></div>
       <div class="oath-box-modal">
-        أقسم بالله العظيم أنني ملتزم بدفع <strong>100 ريال سعودي</strong> إذا تمت الصفقة عبر رقم الحساب في <strong>بنك عدن الأول: 22846</strong>.
-        لكشف الرقم، اكتب عبارة: <strong>أقسم بالله</strong>.
+        أقسم بالله العظيم أنني ملتزم بدفع نسبة <strong>1٪</strong> إذا تمت الصفقة عبر رقم الحساب في <strong>بنك عدن الأول: 22846</strong>.<br>
+        لكشف رقم المعلن، اكتب عبارة: <strong>أقسم بالله</strong>.
       </div>
       <label for="phoneOathInput">اكتب عبارة القسم</label>
       <input type="text" id="phoneOathInput" placeholder="أقسم بالله">
       <div class="btn-row">
-        <button type="button" class="btn btn-green" onclick="revealPhoneWithOath()">إظهار الرقم</button>
+        <button type="button" class="btn btn-green" onclick="revealPhoneWithOath()">إظهار رقم المعلن</button>
         <button type="button" class="btn btn-gray" onclick="closePhoneOathModal()">إغلاق</button>
       </div>
       <div id="phoneOathError" style="margin-top:8px; font-size:12px; font-weight:800; color:#c62828;"></div>
@@ -496,13 +484,12 @@
     </div>
   </div>
 
-  <!-- نافذة إرسال رسالة للأدمن حول إعلان أو طلب -->
+  <!-- نافذة إرسال رسالة للأدمن حول إعلان -->
   <div class="modal-backdrop" id="sendMsgModal">
     <div class="modal-card">
-      <h3 style="margin:0 0 6px; color:var(--purple);">إرسال رسالة للأدمن</h3>
+      <h3 style="margin:0 0 6px; color:var(--purple);">رسالة للأدمن</h3>
       <div id="modalItemTitle" style="font-size:13px; font-weight:800; color:#475569; margin-bottom:10px;"></div>
       <form onsubmit="submitAdminMessage(event)">
-        <input type="hidden" id="msgTargetKind">
         <input type="hidden" id="msgTargetId">
         <input type="hidden" id="msgTargetTitle">
         <label for="visitorMsgName">اسمك</label>
@@ -531,9 +518,10 @@
     const GH_TOKEN_STORAGE = "aden_sooq_gh_token";
 
     let allListings = [];
-    let allBuyRequests = [];
     let editingItemId = "";
-    let currentPhoneModalTarget = null;
+    let currentPhoneModalItem = null;
+    let activeUploadController = null;
+    let isUploadCancelled = false;
     const expandedCardsSet = new Set();
 
     function normalizeArabic(str) {
@@ -580,11 +568,17 @@
       }
     }
 
+    function updateCounterDisplay(count) {
+      const countEl = document.getElementById("totalItemsCount");
+      if (countEl) {
+        countEl.textContent = String(Number(count) || 0);
+      }
+    }
+
     function toggleOwnerAdmin() {
       if (document.body.classList.contains("owner-admin-mode")) {
         document.body.classList.remove("owner-admin-mode");
         renderListingsList(allListings);
-        renderBuyRequestsList(allBuyRequests);
         return;
       }
       const code = prompt("أدخل رمز الأدمن للتعديل والحذف والرد على الرسائل:");
@@ -592,7 +586,6 @@
         document.body.classList.add("owner-admin-mode");
         loadAqarMessages();
         renderListingsList(allListings);
-        renderBuyRequestsList(allBuyRequests);
         alert("تم تفعيل وضع الأدمن");
       } else if (code !== null) {
         alert("الرمز غير صحيح");
@@ -603,9 +596,30 @@
       return new Promise((resolve, reject) => {
         const r = new FileReader();
         r.onload = () => resolve(String(r.result || "").split(",")[1] || "");
-        r.onerror = reject;
+        r.onerror = () => reject(new Error("تعذر قراءة ملف الصورة"));
         r.readAsDataURL(file);
       });
+    }
+
+    function setUploadButtonsState(uploading) {
+      const upBtn = document.getElementById("uploadImgsBtn");
+      const stopBtn = document.getElementById("stopUploadBtn");
+      if (upBtn) upBtn.disabled = uploading;
+      if (stopBtn) stopBtn.disabled = !uploading;
+    }
+
+    function stopImageUpload() {
+      isUploadCancelled = true;
+      if (activeUploadController) {
+        try { activeUploadController.abort(); } catch (_) {}
+        activeUploadController = null;
+      }
+      setUploadButtonsState(false);
+      const msgEl = document.getElementById("uploadMsg");
+      if (msgEl) {
+        msgEl.style.color = "#c62828";
+        msgEl.textContent = "تم إيقاف تحميل الصور.";
+      }
     }
 
     async function uploadSelectedImagesToGitHub() {
@@ -614,6 +628,7 @@
       const msgEl = document.getElementById("uploadMsg");
 
       if (!fileEl.files || !fileEl.files.length) {
+        msgEl.style.color = "#c62828";
         msgEl.textContent = "اختر صورة أو أكثر أولاً.";
         return;
       }
@@ -621,36 +636,95 @@
       let token = String(localStorage.getItem(GH_TOKEN_STORAGE) || "").replace(/[^A-Za-z0-9_]/g, "").trim();
       if (!token) {
         const entered = prompt("أدخل رمز GitHub Token لرفع الصور:");
-        if (!entered) return;
+        if (!entered) {
+          msgEl.style.color = "#c62828";
+          msgEl.textContent = "تم إلغاء الرفع لعدم إدخال الرمز.";
+          return;
+        }
         token = String(entered).replace(/[^A-Za-z0-9_]/g, "").trim();
+        if (!token) {
+          msgEl.style.color = "#c62828";
+          msgEl.textContent = "رمز GitHub Token غير صالح.";
+          return;
+        }
         localStorage.setItem(GH_TOKEN_STORAGE, token);
       }
 
-      const urls = [];
-      for (let i = 0; i < fileEl.files.length; i++) {
-        const f = fileEl.files[i];
-        msgEl.textContent = `جاري تحميل الصورة ${i + 1} من ${fileEl.files.length}...`;
-        const base64 = await fileToB64(f);
-        const ext = (f.name.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "") || "jpg";
-        const name = `${Date.now()}-${i + 1}-sooq.${ext}`;
+      isUploadCancelled = false;
+      setUploadButtonsState(true);
+      msgEl.style.color = "#0b3c8a";
 
-        const res = await fetch(`https://api.github.com/repos/${GH_ACCOUNT}/${GH_PROJECT}/contents/${GH_FOLDER}/${name}`, {
-          method: "PUT",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Accept": "application/vnd.github+json",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ message: `Upload ${name}`, content: base64, branch: GH_BRANCH })
-        });
-        if (!res.ok) throw new Error("فشل رفع الصورة");
-        urls.push(`${GH_FOLDER}/${name}`);
+      const uploadedUrls = [];
+      try {
+        for (let i = 0; i < fileEl.files.length; i++) {
+          if (isUploadCancelled) break;
+          const f = fileEl.files[i];
+          msgEl.textContent = `جاري تحميل الصورة ${i + 1} من ${fileEl.files.length}...`;
+
+          const base64 = await fileToB64(f);
+          if (isUploadCancelled) break;
+
+          const ext = (f.name.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "") || "jpg";
+          const name = `${Date.now()}-${i + 1}-sooq.${ext}`;
+
+          activeUploadController = new AbortController();
+          const timeoutId = setTimeout(() => {
+            if (activeUploadController) activeUploadController.abort();
+          }, 25000);
+
+          let res;
+          try {
+            res = await fetch(`https://api.github.com/repos/${GH_ACCOUNT}/${GH_PROJECT}/contents/${GH_FOLDER}/${name}`, {
+              method: "PUT",
+              headers: {
+                "Authorization": `Bearer ${token}`,
+                "Accept": "application/vnd.github+json",
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({ message: `Upload ${name}`, content: base64, branch: GH_BRANCH }),
+              signal: activeUploadController.signal
+            });
+          } finally {
+            clearTimeout(timeoutId);
+            activeUploadController = null;
+          }
+
+          if (!res.ok) {
+            let errDetail = "";
+            try {
+              const errJson = await res.json();
+              errDetail = errJson && errJson.message ? ` (${errJson.message})` : "";
+            } catch (_) {}
+            if (res.status === 401 || res.status === 403) {
+              localStorage.removeItem(GH_TOKEN_STORAGE);
+            }
+            throw new Error(`فشل رفع الصورة ${i + 1}${errDetail}`);
+          }
+
+          uploadedUrls.push(`${GH_FOLDER}/${name}`);
+        }
+
+        if (uploadedUrls.length) {
+          const existing = imgsEl.value.split(/\n+/).map(s => s.trim()).filter(Boolean);
+          imgsEl.value = existing.concat(uploadedUrls).join("\n");
+        }
+
+        if (!isUploadCancelled) {
+          fileEl.value = "";
+          msgEl.style.color = "#1b5e20";
+          msgEl.textContent = `تم تحميل ${uploadedUrls.length} صورة بنجاح.`;
+        }
+      } catch (err) {
+        if (!isUploadCancelled) {
+          msgEl.style.color = "#c62828";
+          msgEl.textContent = (err && err.name === "AbortError")
+            ? "انتهت مهلة التحميل أو تم إلغاؤه. يمكنك المحاولة مرة أخرى."
+            : (err && err.message ? err.message : "تعذر تحميل الصور، تحقق من الرمز أو الاتصال.");
+        }
+      } finally {
+        activeUploadController = null;
+        setUploadButtonsState(false);
       }
-
-      const existing = imgsEl.value.split(/\n+/).map(s => s.trim()).filter(Boolean);
-      imgsEl.value = existing.concat(urls).join("\n");
-      fileEl.value = "";
-      msgEl.textContent = `تم تحميل ${urls.length} صورة بنجاح.`;
     }
     function saveListingItem(event) {
       event.preventDefault();
@@ -749,45 +823,31 @@
       editingItemId = "";
       document.getElementById("itemForm").reset();
       document.getElementById("itemSaveMsg").textContent = "";
+      document.getElementById("uploadMsg").textContent = "";
     }
 
     function deleteItemById(id) {
       if (!confirm("هل تريد حذف هذا الإعلان نهائياً؟")) return;
       fetch(`${DB_URL}/marketItems/${encodeURIComponent(id)}.json`, { method: "DELETE" })
         .then(() => {
-          expandedCardsSet.delete("listing-" + id);
+          expandedCardsSet.delete(id);
           loadListings();
         })
         .catch(() => alert("تعذر حذف الإعلان"));
     }
 
-    function deleteBuyRequestById(reqId) {
-      if (!confirm("هل تريد حذف هذا الطلب نهائياً؟")) return;
-      fetch(`${DB_URL}/buyRequests/${encodeURIComponent(reqId)}.json`, { method: "DELETE" })
-        .then(() => {
-          expandedCardsSet.delete("req-" + reqId);
-          loadBuyRequests();
-        })
-        .catch(() => alert("تعذر حذف الطلب"));
-    }
-
-    function openPhoneOathModal(kind, id) {
-      const sourceList = kind === "request" ? allBuyRequests : allListings;
-      const target = sourceList.find(x => x.id === id);
-      if (!target) return;
+    function openPhoneOathModal(itemId) {
+      const item = allListings.find(x => x.id === itemId);
+      if (!item) return;
 
       const isAdmin = document.body.classList.contains("owner-admin-mode");
-      const labelTitle = kind === "request"
-        ? "الطلب: " + stripAllDigits(target.name || "")
-        : "المعروض: " + stripAllDigits(target.name || "");
-
       if (isAdmin) {
-        alert(`${labelTitle}\nرقم التواصل المباشر (الأدمن): ${target.phone || "غير متوفر"}`);
+        alert(`المعروض: ${stripAllDigits(item.name || "")}\nرقم المعلن المباشر (الأدمن): ${item.phone || "غير متوفر"}`);
         return;
       }
 
-      currentPhoneModalTarget = { kind, item: target };
-      document.getElementById("phoneOathItemTitle").textContent = labelTitle;
+      currentPhoneModalItem = item;
+      document.getElementById("phoneOathItemTitle").textContent = "المعروض: " + stripAllDigits(item.name || "");
       document.getElementById("phoneOathInput").value = "";
       document.getElementById("phoneOathError").textContent = "";
       const box = document.getElementById("revealedPhoneBox");
@@ -797,34 +857,32 @@
     }
 
     function closePhoneOathModal() {
-      currentPhoneModalTarget = null;
+      currentPhoneModalItem = null;
       document.getElementById("phoneOathModal").classList.remove("open");
     }
 
     function revealPhoneWithOath() {
-      if (!currentPhoneModalTarget) return;
+      if (!currentPhoneModalItem) return;
       const val = normalizeArabic(document.getElementById("phoneOathInput").value);
       const errEl = document.getElementById("phoneOathError");
       const box = document.getElementById("revealedPhoneBox");
 
       if (val !== "اقسم بالله") {
-        errEl.textContent = "يرجى كتابة عبارة (أقسم بالله) بشكل صحيح لإظهار الرقم.";
+        errEl.textContent = "يرجى كتابة عبارة (أقسم بالله) بشكل صحيح لإظهار رقم المعلن.";
         box.classList.remove("show");
         return;
       }
 
       errEl.textContent = "";
-      const phoneText = currentPhoneModalTarget.item.phone || "غير متوفر";
-      box.innerHTML = `رقم التواصل: <span style="user-select:all;">${escapeHtml(phoneText)}</span>`;
+      const phoneText = currentPhoneModalItem.phone || "غير متوفر";
+      box.innerHTML = `رقم المعلن: <span style="user-select:all;">${escapeHtml(phoneText)}</span>`;
       box.classList.add("show");
     }
 
-    function openSendMessageModal(kind, id, title) {
-      document.getElementById("msgTargetKind").value = kind || "listing";
-      document.getElementById("msgTargetId").value = id || "";
+    function openSendMessageModal(itemId, title) {
+      document.getElementById("msgTargetId").value = itemId || "";
       document.getElementById("msgTargetTitle").value = title || "";
-      const prefix = kind === "request" ? "طلب" : "معروض";
-      document.getElementById("modalItemTitle").textContent = `رسالة للأدمن بخصوص ${prefix}: ${stripAllDigits(title || "")}`;
+      document.getElementById("modalItemTitle").textContent = `رسالة للأدمن بخصوص المعروض: ${stripAllDigits(title || "")}`;
       document.getElementById("visitorMsgStatus").textContent = "";
       document.getElementById("sendMsgModal").classList.add("open");
     }
@@ -835,7 +893,6 @@
 
     function submitAdminMessage(event) {
       event.preventDefault();
-      const targetKind = document.getElementById("msgTargetKind").value;
       const targetId = document.getElementById("msgTargetId").value;
       const targetTitle = stripAllDigits(document.getElementById("msgTargetTitle").value);
       const senderName = document.getElementById("visitorMsgName").value.trim();
@@ -846,7 +903,6 @@
       const msgId = "aqarmsg-" + Date.now();
       const payload = {
         id: msgId,
-        targetKind,
         targetId,
         itemTitle: targetTitle,
         senderName,
@@ -894,14 +950,13 @@
             .sort((a, b) => (b.sentAt || 0) - (a.sentAt || 0));
 
           box.innerHTML = `<h3 style="margin:6px 0; color:var(--blue); font-size:15px;">الرسائل (${list.length})</h3>` + list.map(m => {
-            const kindLabel = m.targetKind === "request" ? "طلب شراء" : "معروض";
             const replyHtml = m.adminReply
               ? `<div class="msg-reply-box"><strong>رد الأدمن:</strong> ${escapeHtml(m.adminReply)}</div>`
               : "";
             return `
               <div class="msg-item-card">
                 <div style="font-weight:800; color:var(--blue);">${escapeHtml(m.senderName || "مرسل")} — <span style="font-size:12px; color:#475569;">${escapeHtml(m.senderPhone || "")}</span></div>
-                <div style="font-size:12px; font-weight:700; color:#991b1b; margin:3px 0;">بخصوص (${kindLabel}): ${escapeHtml(m.itemTitle || "")}</div>
+                <div style="font-size:12px; font-weight:700; color:#991b1b; margin:3px 0;">بخصوص المعروض: ${escapeHtml(m.itemTitle || "")}</div>
                 <p style="margin:6px 0; font-size:14px;">${escapeHtml(m.messageText || "")}</p>
                 ${replyHtml}
                 <div style="margin-top:8px;">
@@ -948,28 +1003,26 @@
       return Number.isFinite(num) && num > 0 ? num : null;
     }
 
-    function applySearchAndSaveRequest(event) {
+    function applySearchFilters(event) {
       event.preventDefault();
 
       const nameEl = document.getElementById("searchName");
       const locEl = document.getElementById("searchLocation");
       const specsEl = document.getElementById("searchSpecs");
-      const phoneEl = document.getElementById("requesterPhone");
       const statusEl = document.getElementById("searchStatusMsg");
 
-      blockDigitsInField(nameEl, "reqNameDigitWarn");
-      blockDigitsInField(locEl, "reqLocDigitWarn");
-      blockDigitsInField(specsEl, "reqSpecsDigitWarn");
+      blockDigitsInField(nameEl, "searchNameDigitWarn");
+      blockDigitsInField(locEl, "searchLocDigitWarn");
+      blockDigitsInField(specsEl, "searchSpecsDigitWarn");
 
       const rawName = nameEl.value.trim();
       const rawLoc = locEl.value.trim();
       const rawSpecs = specsEl.value.trim();
       const targetPrice = document.getElementById("targetBuyPrice").value.trim();
-      const requesterPhone = phoneEl.value.trim();
 
       if (hasAnyDigit(rawName) || hasAnyDigit(rawLoc) || hasAnyDigit(rawSpecs)) {
         statusEl.style.color = "#c62828";
-        statusEl.textContent = "يُمنع تسجيل أي أرقام في اسم المطلوب أو الموقع أو المواصفات.";
+        statusEl.textContent = "يُمنع تسجيل أي أرقام في البحث.";
         return;
       }
 
@@ -988,103 +1041,62 @@
       });
 
       renderListingsList(filtered);
-
-      const hasRequestDetails = Boolean(rawName || rawLoc || rawSpecs || targetPrice);
-      if (hasRequestDetails && requesterPhone) {
-        const reqId = "buyreq-" + Date.now();
-        const requestRecord = {
-          id: reqId,
-          name: rawName || "طلب شراء عقار أو سيارة",
-          location: rawLoc || "عدن",
-          specs: rawSpecs || "مواصفات حسب الطلب",
-          targetPrice,
-          phone: requesterPhone,
-          dateText: getTodayDateText(),
-          createdAt: Date.now()
-        };
-
-        fetch(`${DB_URL}/buyRequests/${encodeURIComponent(reqId)}.json`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestRecord)
-        })
-          .then(r => {
-            if (!r.ok) throw new Error();
-            statusEl.style.color = "#1b5e20";
-            statusEl.textContent = `المعروضات المطابقة: ${filtered.length} — وتم نشر طلب الشراء في الموقع.`;
-            phoneEl.value = "";
-            loadBuyRequests();
-          })
-          .catch(() => {
-            statusEl.style.color = "#c62828";
-            statusEl.textContent = `المعروضات المطابقة: ${filtered.length} — تعذر حفظ الطلب في قاعدة البيانات.`;
-          });
-      } else if (hasRequestDetails && !requesterPhone) {
-        statusEl.style.color = "#0d47a1";
-        statusEl.textContent = `المعروضات المطابقة: ${filtered.length} — أدخل رقم صاحب الطلب إذا أردت نشر الطلب في الموقع.`;
-      } else {
-        statusEl.style.color = "#0d47a1";
-        statusEl.textContent = `المعروضات المطابقة: ${filtered.length}`;
-      }
+      statusEl.style.color = "#0d47a1";
+      statusEl.textContent = `نتائج البحث المطابقة: ${filtered.length}`;
     }
 
     function resetSearchFilters() {
       document.getElementById("searchBuyForm").reset();
-      document.getElementById("reqNameDigitWarn").textContent = "";
-      document.getElementById("reqLocDigitWarn").textContent = "";
-      document.getElementById("reqSpecsDigitWarn").textContent = "";
+      document.getElementById("searchNameDigitWarn").textContent = "";
+      document.getElementById("searchLocDigitWarn").textContent = "";
+      document.getElementById("searchSpecsDigitWarn").textContent = "";
       document.getElementById("searchStatusMsg").textContent = "";
       renderListingsList(allListings);
     }
 
-    function toggleMoreDetails(cardKey, itemId, isListing) {
-      const cardEl = document.getElementById("card-" + cardKey);
-      const btnEl = document.getElementById("moreBtn-" + cardKey);
-      if (!cardEl) return;
+    function toggleMoreDetails(itemId) {
+      const cardEl = document.getElementById("card-" + itemId);
+      const btnEl = document.getElementById("moreBtn-" + itemId);
+      const item = allListings.find(x => x.id === itemId);
+      if (!cardEl || !item) return;
 
-      const isCurrentlyExpanded = expandedCardsSet.has(cardKey);
+      const isCurrentlyExpanded = expandedCardsSet.has(itemId);
       if (isCurrentlyExpanded) {
-        expandedCardsSet.delete(cardKey);
+        expandedCardsSet.delete(itemId);
         cardEl.classList.remove("expanded");
         if (btnEl) btnEl.textContent = "المزيد";
       } else {
-        expandedCardsSet.add(cardKey);
+        expandedCardsSet.add(itemId);
         cardEl.classList.add("expanded");
         if (btnEl) btnEl.textContent = "إخفاء التفاصيل";
 
-        if (isListing) {
-          const item = allListings.find(x => x.id === itemId);
-          if (item) {
-            const nextViews = Number(item.views || 0) + 1;
-            item.views = nextViews;
-            const viewsBadge = document.getElementById("viewsBadge-" + cardKey);
-            if (viewsBadge) viewsBadge.textContent = `المشاهدات: ${nextViews}`;
+        const nextViews = Number(item.views || 0) + 1;
+        item.views = nextViews;
+        const viewsBadge = document.getElementById("viewsBadge-" + itemId);
+        if (viewsBadge) viewsBadge.textContent = `المشاهدات: ${nextViews}`;
 
-            fetch(`${DB_URL}/marketItems/${encodeURIComponent(itemId)}/views.json`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(nextViews)
-            }).catch(() => {});
-          }
-        }
+        fetch(`${DB_URL}/marketItems/${encodeURIComponent(itemId)}/views.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(nextViews)
+        }).catch(() => {});
       }
     }
 
     function renderListingsList(list) {
       const container = document.getElementById("listingsContainer");
-      const countEl = document.getElementById("totalItemsCount");
-      if (countEl) countEl.textContent = String(list.length);
+      const safeList = Array.isArray(list) ? list : [];
+      updateCounterDisplay(safeList.length);
 
-      if (!list.length) {
+      if (!safeList.length) {
         container.innerHTML = "<div class='big-white-card'><p style='text-align:center; margin:0; color:#475569;'>لا توجد معروضات مطابقة حالياً.</p></div>";
         return;
       }
 
-      container.innerHTML = list.map((item, idx) => {
-        const cardKey = "listing-" + item.id;
-        const serialNumber = item.serialNumber || (idx + 1);
+      container.innerHTML = safeList.map((item, idx) => {
+        const serialNumber = Number(item.serialNumber) > 0 ? Number(item.serialNumber) : (safeList.length - idx);
         const viewsCount = Number(item.views || 0);
-        const isExpanded = expandedCardsSet.has(cardKey);
+        const isExpanded = expandedCardsSet.has(item.id);
         const imgs = Array.isArray(item.images) ? item.images : [];
         const photosHtml = imgs.length
           ? `<div class="item-photos">${imgs.map(url => `<img src="${escapeHtml(url)}" alt="${escapeHtml(stripAllDigits(item.name || ""))}" onclick="window.open(this.src, '_blank')">`).join("")}</div>`
@@ -1095,19 +1107,19 @@
         const safeSpecs = escapeHtml(stripAllDigits(item.specs || ""));
 
         return `
-          <article class="big-white-card ${isExpanded ? "expanded" : ""}" id="card-${escapeHtml(cardKey)}">
+          <article class="big-white-card ${isExpanded ? "expanded" : ""}" id="card-${escapeHtml(item.id)}">
             <div class="card-top">
               <span class="serial-tag">رقم المعروض: #${serialNumber}</span>
               <span class="type-tag">النوع: ${escapeHtml(item.type || "بيع")}</span>
               <span class="date-tag">التاريخ: ${escapeHtml(item.dateText || "")}</span>
-              <span class="admin-views-tag" id="viewsBadge-${escapeHtml(cardKey)}">المشاهدات: ${viewsCount}</span>
+              <span class="admin-views-tag" id="viewsBadge-${escapeHtml(item.id)}">المشاهدات: ${viewsCount}</span>
             </div>
 
             <h3 class="item-main-title">${safeTitle}</h3>
             <div class="item-price-highlight">المبلغ المعروض به: ${escapeHtml(item.price || "")}</div>
             <div class="admin-direct-phone">رقم المعلن (عرض مباشر للأدمن): ${escapeHtml(item.phone || "غير متوفر")}</div>
 
-            <button type="button" class="btn btn-blue" id="moreBtn-${escapeHtml(cardKey)}" onclick="toggleMoreDetails('${escapeHtml(cardKey)}', '${escapeHtml(item.id)}', true)">${isExpanded ? "إخفاء التفاصيل" : "المزيد"}</button>
+            <button type="button" class="btn btn-blue" id="moreBtn-${escapeHtml(item.id)}" onclick="toggleMoreDetails('${escapeHtml(item.id)}')">${isExpanded ? "إخفاء التفاصيل" : "المزيد"}</button>
 
             <div class="more-details-panel">
               <div class="item-meta-line">الموقع: ${safeLocation}</div>
@@ -1118,8 +1130,8 @@
             <div class="card-bottom">
               <span>تواصل آمن عبر الموقع</span>
               <div class="card-actions-group">
-                <button type="button" class="btn btn-red" onclick="openPhoneOathModal('listing', '${escapeHtml(item.id)}')">معرفة رقم المعلن</button>
-                <button type="button" class="btn btn-purple" onclick="openSendMessageModal('listing', '${escapeHtml(item.id)}', '${safeTitle}')">رسالة للأدمن</button>
+                <button type="button" class="btn btn-red" onclick="openPhoneOathModal('${escapeHtml(item.id)}')">معرفة رقم المعلن</button>
+                <button type="button" class="btn btn-purple" onclick="openSendMessageModal('${escapeHtml(item.id)}', '${safeTitle}')">رسالة للأدمن</button>
                 <div class="owner-controls">
                   <button type="button" class="btn btn-green" onclick="startEditItem('${escapeHtml(item.id)}')">تعديل</button>
                   <button type="button" class="btn btn-red" onclick="deleteItemById('${escapeHtml(item.id)}')">حذف</button>
@@ -1131,61 +1143,12 @@
       }).join("");
     }
 
-    function renderBuyRequestsList(list) {
-      const container = document.getElementById("requestsContainer");
-      const countEl = document.getElementById("totalRequestsCount");
-      if (countEl) countEl.textContent = String(list.length);
-
-      if (!list.length) {
-        container.innerHTML = "<div class='big-white-card request-card'><p style='text-align:center; margin:0; color:#475569;'>لا توجد طلبات بحث وشراء معروضة حالياً.</p></div>";
-        return;
-      }
-
-      container.innerHTML = list.map((req, idx) => {
-        const cardKey = "req-" + req.id;
-        const serialNumber = req.serialNumber || (idx + 1);
-        const isExpanded = expandedCardsSet.has(cardKey);
-        const safeTitle = escapeHtml(stripAllDigits(req.name || ""));
-        const safeLocation = escapeHtml(stripAllDigits(req.location || ""));
-        const safeSpecs = escapeHtml(stripAllDigits(req.specs || ""));
-
-        return `
-          <article class="big-white-card request-card ${isExpanded ? "expanded" : ""}" id="card-${escapeHtml(cardKey)}">
-            <div class="card-top">
-              <span class="serial-tag request-tag">رقم الطلب: #${serialNumber}</span>
-              <span class="type-tag">طلب شراء</span>
-              <span class="date-tag">التاريخ: ${escapeHtml(req.dateText || "")}</span>
-            </div>
-
-            <h3 class="item-main-title">${safeTitle}</h3>
-            ${req.targetPrice ? `<div class="item-price-highlight">السعر المراد الشراء به: ${escapeHtml(req.targetPrice)}</div>` : ""}
-            <div class="admin-direct-phone">رقم صاحب الطلب (عرض مباشر للأدمن): ${escapeHtml(req.phone || "غير متوفر")}</div>
-
-            <button type="button" class="btn btn-blue" id="moreBtn-${escapeHtml(cardKey)}" onclick="toggleMoreDetails('${escapeHtml(cardKey)}', '${escapeHtml(req.id)}', false)">${isExpanded ? "إخفاء التفاصيل" : "المزيد"}</button>
-
-            <div class="more-details-panel">
-              <div class="item-meta-line">الموقع المطلوب: ${safeLocation}</div>
-              <div class="item-specs">${safeSpecs}</div>
-            </div>
-
-            <div class="card-bottom">
-              <span>طلب بحث وشراء منشور</span>
-              <div class="card-actions-group">
-                <button type="button" class="btn btn-red" onclick="openPhoneOathModal('request', '${escapeHtml(req.id)}')">معرفة رقم صاحب الطلب</button>
-                <button type="button" class="btn btn-purple" onclick="openSendMessageModal('request', '${escapeHtml(req.id)}', '${safeTitle}')">رسالة للأدمن</button>
-                <div class="owner-controls">
-                  <button type="button" class="btn btn-red" onclick="deleteBuyRequestById('${escapeHtml(req.id)}')">حذف</button>
-                </div>
-              </div>
-            </div>
-          </article>
-        `;
-      }).join("");
-    }
-
     function loadListings() {
       fetch(`${DB_URL}/marketItems.json`)
-        .then(r => r.json())
+        .then(r => {
+          if (!r.ok) throw new Error();
+          return r.json();
+        })
         .then(data => {
           if (!data || typeof data !== "object") {
             allListings = [];
@@ -1194,7 +1157,7 @@
           }
           const ordered = Object.entries(data)
             .map(([key, val]) => ({ ...(val || {}), id: (val && val.id) || key }))
-            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+            .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0));
 
           allListings = ordered.map((item, index) => ({
             ...item,
@@ -1204,37 +1167,12 @@
           renderListingsList(allListings);
         })
         .catch(() => {
+          updateCounterDisplay(0);
           document.getElementById("listingsContainer").innerHTML = "<div class='big-white-card'><p style='text-align:center; margin:0; color:#c62828;'>تعذر تحميل المعروضات من Firebase.</p></div>";
         });
     }
 
-    function loadBuyRequests() {
-      fetch(`${DB_URL}/buyRequests.json`)
-        .then(r => r.json())
-        .then(data => {
-          if (!data || typeof data !== "object") {
-            allBuyRequests = [];
-            renderBuyRequestsList([]);
-            return;
-          }
-          const ordered = Object.entries(data)
-            .map(([key, val]) => ({ ...(val || {}), id: (val && val.id) || key }))
-            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-
-          allBuyRequests = ordered.map((req, index) => ({
-            ...req,
-            serialNumber: index + 1
-          })).reverse();
-
-          renderBuyRequestsList(allBuyRequests);
-        })
-        .catch(() => {
-          document.getElementById("requestsContainer").innerHTML = "<div class='big-white-card request-card'><p style='text-align:center; margin:0; color:#c62828;'>تعذر تحميل طلبات الشراء من Firebase.</p></div>";
-        });
-    }
-
     loadListings();
-    loadBuyRequests();
   </script>
 </body>
 </html>
