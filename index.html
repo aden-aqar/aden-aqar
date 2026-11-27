@@ -346,10 +346,15 @@
     <section class="card hidden" id="adminPanel">
       <div class="card-title">لوحة الأدمن (صلاحية الحذف، الشريط الإخباري، ورمز GitHub)</div>
 
+      <div class="row-flex" style="justify-content: space-between; margin-bottom: 12px;">
+        <span style="font-size: 0.88rem; color: #14532d; font-weight: bold;">وضع الأدمن مفعّل</span>
+        <button type="button" class="btn-secondary" onclick="lockAdminPanel()">قفل لوحة الأدمن</button>
+      </div>
+
       <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:14px;">
         <div style="font-weight:bold;color:#14532d;margin-bottom:6px;">صلاحيات إدارة المعروضات للأدمن:</div>
         <p style="font-size:0.88rem;color:#374151;margin-bottom:8px;">
-          عند فتح لوحة الأدمن يكون وضع الأدمن مفعّلاً لحذف أي معروض من القائمة أو مسح جميع المعروضات عند الحاجة. التعديل مخصص لمنشئ المعروض فقط.
+          بصفتك أدمن يمكنك حذف أي معروض من القائمة أو مسح جميع المعروضات عند الحاجة. التعديل مخصص لمنشئ المعروض فقط.
         </p>
         <button type="button" class="btn-danger" onclick="clearAllListingsByAdmin()">حذف جميع المعروضات (أدمن)</button>
       </div>
@@ -399,6 +404,20 @@
       <div class="listings-grid" id="listingsContainer"></div>
     </section>
   </main>
+
+  <!-- نافذة إدخال شفرة الأدمن -->
+  <div class="modal-backdrop" id="adminCodeModal">
+    <div class="modal-box">
+      <div class="card-title">دخول لوحة الأدمن</div>
+      <label for="adminPasscodeInput">أدخل شفرة الأدمن</label>
+      <input type="password" id="adminPasscodeInput" placeholder="أدخل شفرة الأدمن هنا..." autocomplete="off" />
+      <div class="row-flex" style="justify-content: flex-end; margin-top: 8px;">
+        <button type="button" class="btn-primary" onclick="verifyAdminPasscode()">دخول</button>
+        <button type="button" class="btn-secondary" onclick="closeAdminCodeModal()">إلغاء</button>
+      </div>
+      <div id="adminCodeMsg" style="margin-top: 8px; font-size: 0.88rem; font-weight: bold;"></div>
+    </div>
+  </div>
 
   <!-- نافذة إضافة / تعديل المعروض -->
   <div class="modal-backdrop" id="listingModal">
@@ -478,6 +497,7 @@
   </div>
   <script>
     // إعدادات المستودع والصفحة الخاصة بـ aden-aqar
+    const ADMIN_PASSCODE = "9270268911";
     const GH_ACCOUNT = "aden-aqar";
     const GH_PROJECT = "aden-aqar";
     const GH_BRANCH = "main";
@@ -485,7 +505,8 @@
     const GH_TOKEN_STORAGE = "aden_aqar_gh_token_persistent_v1";
 
     let isUploadCancelled = false;
-    let activeUploadController = null;
+    let activeUploadXhr = null;
+    let activeUploadTimer = null;
     let isAdminLoggedIn = false;
 
     function sanitizeTokenValue(raw) {
@@ -576,14 +597,67 @@
       inputEl.type = inputEl.type === "password" ? "text" : "password";
     }
 
-    function toggleAdminPanel() {
+    function openAdminCodeModal() {
+      const modal = document.getElementById("adminCodeModal");
+      const inputEl = document.getElementById("adminPasscodeInput");
+      const msgEl = document.getElementById("adminCodeMsg");
+      if (inputEl) inputEl.value = "";
+      if (msgEl) msgEl.textContent = "";
+      if (modal) modal.style.display = "flex";
+      setTimeout(() => {
+        if (inputEl) inputEl.focus();
+      }, 60);
+    }
+
+    function closeAdminCodeModal() {
+      const modal = document.getElementById("adminCodeModal");
+      if (modal) modal.style.display = "none";
+    }
+
+    function verifyAdminPasscode() {
+      const inputEl = document.getElementById("adminPasscodeInput");
+      const msgEl = document.getElementById("adminCodeMsg");
       const panel = document.getElementById("adminPanel");
-      if (!panel) return;
-      panel.classList.toggle("hidden");
-      isAdminLoggedIn = !panel.classList.contains("hidden");
+      const entered = String(inputEl ? inputEl.value : "").trim();
+
+      if (entered !== ADMIN_PASSCODE) {
+        if (msgEl) {
+          msgEl.style.color = "#c62828";
+          msgEl.textContent = "شفرة الأدمن غير صحيحة.";
+        }
+        return;
+      }
+
+      isAdminLoggedIn = true;
+      closeAdminCodeModal();
+      if (panel) panel.classList.remove("hidden");
       syncAdminTokenUI(true);
       syncAdminTickerUI();
       renderListings();
+    }
+
+    function lockAdminPanel() {
+      isAdminLoggedIn = false;
+      const panel = document.getElementById("adminPanel");
+      if (panel) panel.classList.add("hidden");
+      renderListings();
+    }
+
+    function toggleAdminPanel() {
+      const panel = document.getElementById("adminPanel");
+      if (!panel) return;
+      if (!panel.classList.contains("hidden")) {
+        lockAdminPanel();
+        return;
+      }
+      if (isAdminLoggedIn) {
+        panel.classList.remove("hidden");
+        syncAdminTokenUI(true);
+        syncAdminTickerUI();
+        renderListings();
+      } else {
+        openAdminCodeModal();
+      }
     }
 
     function setUploadButtonsState(isUploading) {
@@ -595,10 +669,15 @@
 
     function cancelImageUpload() {
       isUploadCancelled = true;
-      if (activeUploadController) {
+      if (activeUploadTimer) {
+        clearTimeout(activeUploadTimer);
+        activeUploadTimer = null;
+      }
+      if (activeUploadXhr) {
         try {
-          activeUploadController.abort();
+          activeUploadXhr.abort();
         } catch (_) {}
+        activeUploadXhr = null;
       }
       const msgEl = document.getElementById("uploadMsg");
       if (msgEl) {
@@ -609,62 +688,75 @@
       syncAdminTokenUI(true);
     }
 
-    function prepareImageBase64(file) {
+    function readFileAsBase64Direct(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
-          const dataUrl = String(reader.result || "");
-          const img = new Image();
-          img.onload = () => {
-            try {
-              const maxSide = 1280;
-              let w = img.width || 800;
-              let h = img.height || 600;
-              if (w > maxSide || h > maxSide) {
-                if (w >= h) {
-                  h = Math.round((h * maxSide) / w);
-                  w = maxSide;
-                } else {
-                  w = Math.round((w * maxSide) / h);
-                  h = maxSide;
-                }
-              }
-              const canvas = document.createElement("canvas");
-              canvas.width = w;
-              canvas.height = h;
-              const ctx = canvas.getContext("2d");
-              ctx.drawImage(img, 0, 0, w, h);
-              const compressedUrl = canvas.toDataURL("image/jpeg", 0.82);
-              const b64 = compressedUrl.split(",")[1] || "";
-              resolve({ base64: b64, ext: "jpg" });
-            } catch (_) {
-              const parts = dataUrl.split(",");
-              const ext = (file.name.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "") || "jpg";
-              resolve({ base64: parts.length > 1 ? parts[1] : dataUrl, ext });
-            }
-          };
-          img.onerror = () => {
-            const parts = dataUrl.split(",");
-            const ext = (file.name.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "") || "jpg";
-            resolve({ base64: parts.length > 1 ? parts[1] : dataUrl, ext });
-          };
-          img.src = dataUrl;
+          const result = String(reader.result || "");
+          const commaIndex = result.indexOf(",");
+          const b64 = commaIndex !== -1 ? result.slice(commaIndex + 1) : result;
+          const extMatch = (file.name || "").split(".").pop() || "jpg";
+          const cleanExt = extMatch.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "jpg";
+          resolve({ base64: b64, ext: cleanExt });
         };
-        reader.onerror = () => reject(new Error("تعذر قراءة ملف الصورة."));
+        reader.onerror = () => reject(new Error("تعذر قراءة ملف الصورة من الجهاز."));
         reader.readAsDataURL(file);
       });
     }
 
-    async function sendGitHubPutRequest(url, token, authScheme, payload, signal) {
-      return fetch(url, {
-        method: "PUT",
-        headers: {
-          "Authorization": `${authScheme} ${token}`,
-          "Accept": "application/vnd.github+json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload),
-        signal
+    function xhrPutGitHubFile(url, token, authPrefix, payload) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        activeUploadXhr = xhr;
+        xhr.open("PUT", url, true);
+        xhr.setRequestHeader("Authorization", `${authPrefix} ${token}`);
+        xhr.setRequestHeader("Accept", "application/vnd.github+json");
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        activeUploadTimer = setTimeout(() => {
+          try {
+            xhr.abort();
+          } catch (_) {}
+          reject(new Error("انتهت مهلة الاتصال بـ GitHub (30 ثانية)."));
+        }, 30000);
+
+        xhr.onload = () => {
+          if (activeUploadTimer) {
+            clearTimeout(activeUploadTimer);
+            activeUploadTimer = null;
+          }
+          activeUploadXhr = null;
+          let parsed = null;
+          try {
+            parsed = JSON.parse(xhr.responseText || "{}");
+          } catch (_) {}
+          resolve({
+            ok: xhr.status >= 200 && xhr.status < 300,
+            status: xhr.status,
+            data: parsed,
+            rawText: xhr.responseText || ""
+          });
+        };
+
+        xhr.onerror = () => {
+          if (activeUploadTimer) {
+            clearTimeout(activeUploadTimer);
+            activeUploadTimer = null;
+          }
+          activeUploadXhr = null;
+          reject(new Error("تعذر الوصول إلى api.github.com (تحقق من الاتصال بالإنترنت أو المتصفح)."));
+        };
+
+        xhr.onabort = () => {
+          if (activeUploadTimer) {
+            clearTimeout(activeUploadTimer);
+            activeUploadTimer = null;
+          }
+          activeUploadXhr = null;
+          reject(new Error("تم إلغاء عملية الرفع."));
+        };
+
+        xhr.send(JSON.stringify(payload));
       });
     }
 
@@ -695,45 +787,30 @@
         for (let i = 0; i < fileEl.files.length; i++) {
           if (isUploadCancelled) break;
           const f = fileEl.files[i];
-          msgEl.textContent = `جاري تجهيز ورفع الصورة ${i + 1} من ${fileEl.files.length}...`;
+          msgEl.textContent = `جاري رفع الصورة ${i + 1} من ${fileEl.files.length}...`;
 
-          const prepared = await prepareImageBase64(f);
+          const fileInfo = await readFileAsBase64Direct(f);
           if (isUploadCancelled) break;
 
-          const name = `${Date.now()}-${i + 1}-aqar.${prepared.ext}`;
-          const endpoint = `https://api.github.com/repos/${GH_ACCOUNT}/${GH_PROJECT}/contents/${GH_FOLDER}/${name}`;
-          const bodyPayload = {
-            message: `Upload ${name}`,
-            content: prepared.base64,
+          const fileName = `${Date.now()}-${i + 1}-aqar.${fileInfo.ext}`;
+          const endpoint = `https://api.github.com/repos/${GH_ACCOUNT}/${GH_PROJECT}/contents/${GH_FOLDER}/${fileName}`;
+          const payload = {
+            message: `Upload ${fileName}`,
+            content: fileInfo.base64,
             branch: GH_BRANCH
           };
 
-          activeUploadController = new AbortController();
-          const timeoutId = setTimeout(() => {
-            if (activeUploadController) activeUploadController.abort();
-          }, 30000);
-
-          let res;
-          try {
-            res = await sendGitHubPutRequest(endpoint, token, "Bearer", bodyPayload, activeUploadController.signal);
-            if (res.status === 401) {
-              res = await sendGitHubPutRequest(endpoint, token, "token", bodyPayload, activeUploadController.signal);
-            }
-          } finally {
-            clearTimeout(timeoutId);
-            activeUploadController = null;
+          let res = await xhrPutGitHubFile(endpoint, token, "Bearer", payload);
+          if (!res.ok && res.status === 401 && !isUploadCancelled) {
+            res = await xhrPutGitHubFile(endpoint, token, "token", payload);
           }
 
           if (!res.ok) {
-            let errDetail = "";
-            try {
-              const errJson = await res.json();
-              errDetail = errJson && errJson.message ? ` - ${errJson.message}` : "";
-            } catch (_) {}
-            throw new Error(`فشل رفع الصورة ${i + 1} (رمز ${res.status})${errDetail}`);
+            const ghMsg = res.data && res.data.message ? res.data.message : res.rawText;
+            throw new Error(`فشل الرفع للصورة ${i + 1} (كود ${res.status}): ${ghMsg || "تحقق من صلاحيات التوكن على المستودع aden-aqar/aden-aqar"}`);
           }
 
-          uploadedUrls.push(`${GH_FOLDER}/${name}`);
+          uploadedUrls.push(`${GH_FOLDER}/${fileName}`);
         }
 
         if (uploadedUrls.length && imgsEl) {
@@ -744,21 +821,25 @@
         if (!isUploadCancelled) {
           fileEl.value = "";
           msgEl.style.color = "#1b5e20";
-          msgEl.textContent = `تم تحميل ${uploadedUrls.length} صورة بنجاح.`;
+          msgEl.textContent = `تم رفع ${uploadedUrls.length} صورة بنجاح.`;
         }
       } catch (err) {
         if (!isUploadCancelled) {
           msgEl.style.color = "#c62828";
-          msgEl.textContent = (err && err.name === "AbortError")
-            ? "انتهت مهلة التحميل أو تم إلغاؤه."
-            : (err && err.message ? err.message : "تعذر تحميل الصور.");
+          msgEl.textContent = err && err.message ? err.message : "تعذر رفع الصور.";
         }
       } finally {
-        activeUploadController = null;
+        activeUploadXhr = null;
+        if (activeUploadTimer) {
+          clearTimeout(activeUploadTimer);
+          activeUploadTimer = null;
+        }
         setUploadButtonsState(false);
         syncAdminTokenUI(true);
       }
     }
+  </script>
+  <script>
     const OWNER_ID_STORAGE_KEY = "aden_aqar_owner_key_v1";
     const TICKER_STORAGE_KEY = "aden_aqar_custom_ticker_v1";
     const DEFAULT_TICKER_TEXT = "مرحباً بكم في منصة عدن للعقارات والسيارات - تصفح أحدث العروض العقارية والمركبات في عدن - إدارة النشر والصور عبر لوحة الأدمن";
@@ -798,8 +879,7 @@
     }
 
     function isValidOathInput(text) {
-      const norm = normalizeOathPhrase(text);
-      return norm === "اقسم بالله";
+      return normalizeOathPhrase(text) === "اقسم بالله";
     }
 
     function loadTickerText() {
@@ -1275,7 +1355,7 @@
 
     function clearAllListingsByAdmin() {
       if (!isAdminLoggedIn) {
-        alert("افتح لوحة الأدمن أولاً لتفعيل صلاحية الحذف.");
+        alert("افتح لوحة الأدمن بالشفرة أولاً لتفعيل صلاحية الحذف.");
         return;
       }
       saveListings([]);
