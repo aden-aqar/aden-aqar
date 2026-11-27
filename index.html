@@ -3,374 +3,1428 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>عدن عقار - رفع الصور والربط مع GitHub</title>
+  <title>عدن للعقارات - Aden Aqarat</title>
   <style>
-    * { box-sizing: border-box; font-family: Tahoma, Arial, sans-serif; }
-    body { margin: 0; background: #f4f6f9; color: #1f2937; padding: 16px; }
-    .container { max-width: 780px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
-    h1, h2, h3 { margin-top: 0; color: #0f172a; }
-    .row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; align-items: center; }
-    input[type="text"], input[type="password"], input[type="file"] {
-      flex: 1; min-width: 200px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px;
+    :root {
+      --primary: #14532d;
+      --primary-dark: #0f3d21;
+      --accent: #16a34a;
+      --accent-soft: #dcfce7;
+      --bg: #f4f7f5;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #4b5563;
+      --border: #d1d5db;
+      --danger: #b91c1c;
+      --sold-bg: #fee2e2;
+      --sold-text: #991b1b;
     }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Tahoma, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .datetime-bar {
+      background: #092614;
+      color: #dcfce7;
+      padding: 6px 14px;
+      font-size: 0.84rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .top-banner {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary), var(--accent));
+      color: #ffffff;
+      padding: 18px 16px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .top-banner h1 {
+      font-size: 1.55rem;
+      margin-bottom: 6px;
+    }
+
+    .top-banner p {
+      font-size: 0.92rem;
+      opacity: 0.95;
+    }
+
+    .ticker-wrap {
+      background: var(--primary-dark);
+      color: #ecfdf5;
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 8px 0;
+      border-bottom: 2px solid var(--accent);
+      font-size: 0.88rem;
+    }
+
+    .ticker-text {
+      display: inline-block;
+      padding-right: 100%;
+      animation: tickerMove 45s linear infinite;
+    }
+
+    @keyframes tickerMove {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .container {
+      max-width: 980px;
+      margin: 16px auto;
+      padding: 0 12px 40px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--primary);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .row-flex {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .badge-counter {
+      background: var(--accent-soft);
+      color: var(--primary);
+      border: 1px solid #86efac;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    .listing-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    .status-available {
+      background: var(--accent-soft);
+      color: var(--primary);
+      border: 1px solid #86efac;
+    }
+
+    .status-sold {
+      background: var(--sold-bg);
+      color: var(--sold-text);
+      border: 1px solid #fca5a5;
+    }
+
+    .owner-status-icon-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: bold;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    .owner-status-icon-btn.is-available {
+      border-color: #86efac;
+      background: #f0fdf4;
+      color: #14532d;
+    }
+
+    .owner-status-icon-btn.is-unavailable {
+      border-color: #fca5a5;
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      background: #fff;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: bold;
+      margin-bottom: 4px;
+      color: #1f2937;
+    }
+
     button {
-      padding: 10px 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px;
-      background: #2563eb; color: #fff; transition: 0.2s;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.92rem;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
     }
-    button:hover { background: #1d4ed8; }
-    button.secondary { background: #475569; }
-    button.secondary:hover { background: #334155; }
-    button.success { background: #16a34a; }
-    button.success:hover { background: #15803d; }
-    button.danger { background: #dc2626; }
-    button.danger:hover { background: #b91c1c; }
-    .box { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 10px; padding: 14px; margin-top: 14px; }
-    .status { margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: #eff6ff; border: 1px solid #bfdbfe; font-size: 13px; white-space: pre-wrap; word-break: break-word; }
-    .status.error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
-    .status.success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
-    .hidden { display: none; }
-    .preview-img { max-width: 100%; max-height: 240px; border-radius: 8px; margin-top: 10px; display: none; border: 1px solid #cbd5e1; }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn-success {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #4b5563;
+      color: #fff;
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    .btn-soft {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .upload-box {
+      border: 1px dashed #6b7280;
+      border-radius: 10px;
+      padding: 12px;
+      background: #f9fafb;
+      margin-bottom: 12px;
+    }
+
+    .oath-box {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 8px;
+    }
+
+    .oath-statement {
+      font-weight: bold;
+      color: var(--primary-dark);
+      font-size: 0.92rem;
+      margin-bottom: 8px;
+      line-height: 1.7;
+    }
+
+    .phone-reveal-box {
+      background: #ecfdf5;
+      border: 1px solid #6ee7b7;
+      color: var(--primary-dark);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      margin: 8px 0;
+    }
+
+    .listings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 14px;
+    }
+
+    .listing-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .listing-img {
+      width: 100%;
+      height: 185px;
+      object-fit: cover;
+      background: #e5e7eb;
+    }
+
+    .listing-body {
+      padding: 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .listing-price {
+      color: var(--primary);
+      font-weight: bold;
+      font-size: 1.05rem;
+      margin: 6px 0;
+    }
+
+    .listing-meta {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      z-index: 999;
+    }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 100%;
+      padding: 18px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .hidden {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>لوحة إدارة رفع الصور (aden-aqar)</h2>
+  <div class="datetime-bar">
+    <span id="liveClockDisplay">الساعة: --:--:--</span>
+    <span id="liveGregorianDateDisplay">التاريخ: --</span>
+    <span id="liveHijriDateDisplay">الهجري: --</span>
+  </div>
 
-    <!-- بوابة الدخول للأدمن -->
-    <div id="adminLockBox" class="box">
-      <label for="adminCodeInput"><strong>أدخل شفرة الدخول للأدمن:</strong></label>
-      <div class="row" style="margin-top: 8px; margin-bottom: 0;">
-        <input type="password" id="adminCodeInput" placeholder="أدخل الشفرة هنا" />
-        <button type="button" onclick="unlockAdmin()">دخول الأدمن</button>
-      </div>
-      <div id="lockMsg" class="status hidden"></div>
+  <header class="top-banner">
+    <h1>عدن للعقارات والسيارات</h1>
+    <p>منصة عرض العقارات والسيارات في عدن - https://aden-aqar.github.io/aden-aqar/</p>
+  </header>
+
+  <div class="ticker-wrap">
+    <div class="ticker-text" id="newsTickerText">
+      مرحباً بكم في منصة عدن للعقارات والسيارات - تصفح أحدث العروض العقارية والمركبات في عدن - إدارة النشر والصور عبر لوحة الأدمن
     </div>
+  </div>
 
-    <!-- لوحة الأدمن -->
-    <div id="adminPanel" class="box hidden">
-      <div class="row" style="justify-content: space-between;">
-        <strong>إعدادات GitHub Token والمستودع</strong>
-        <button type="button" class="danger" onclick="resetAdminSession()">إعادة ضبط / خروج الأدمن</button>
+  <main class="container">
+    <section class="card">
+      <div class="row-flex" style="justify-content: space-between;">
+        <div class="row-flex">
+          <span class="badge-counter" id="totalListingsCounter">عدد المعروضات: 0</span>
+          <span class="badge-counter" id="visibleListingsCounter">المعروض الظاهر: 0</span>
+        </div>
+        <div class="row-flex">
+          <button type="button" class="btn-soft" id="toggleAdminBtn" onclick="toggleAdminPanel()">إدارة وتعديل (أدمن)</button>
+          <button type="button" class="btn-primary" onclick="openModal()">إضافة معروض جديد</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card hidden" id="adminPanel">
+      <div class="card-title">لوحة الأدمن (صلاحية الحذف، الشريط الإخباري، ورمز GitHub)</div>
+
+      <div class="row-flex" style="justify-content: space-between; margin-bottom: 12px;">
+        <span style="font-size: 0.88rem; color: #14532d; font-weight: bold;">وضع الأدمن مفعّل</span>
+        <div class="row-flex">
+          <button type="button" class="btn-soft" onclick="resetFilters()">إعادة ضبط البحث</button>
+          <button type="button" class="btn-secondary" onclick="lockAdminPanel()">قفل لوحة الأدمن</button>
+        </div>
       </div>
 
-      <div class="row">
-        <input type="password" id="adminGhTokenInput" placeholder="الصق رمز GitHub Token هنا (github_pat_...)" />
-        <button type="button" id="toggleRevealBtn" class="secondary" onclick="handleRevealToken()">طلب إظهار التوكن</button>
-        <button type="button" class="success" onclick="saveGitHubToken()">حفظ التوكن</button>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:14px;">
+        <div style="font-weight:bold;color:#14532d;margin-bottom:6px;">صلاحيات إدارة المعروضات للأدمن:</div>
+        <p style="font-size:0.88rem;color:#374151;margin-bottom:8px;">
+          بصفتك أدمن يمكنك حذف أي معروض من القائمة أو مسح جميع المعروضات عند الحاجة. التعديل وتبديل حالة التوفر مخصص لمنشئ المعروض فقط.
+        </p>
+        <button type="button" class="btn-danger" onclick="clearAllListingsByAdmin()">حذف جميع المعروضات (أدمن)</button>
       </div>
 
-      <div class="row" style="margin-bottom: 0;">
-        <button type="button" onclick="checkRepoAndTokenStatus()">فحص المستودع والتوكن</button>
-        <button type="button" class="secondary" onclick="clearSavedToken()">مسح التوكن المحفوظ</button>
+      <label for="adminTickerInput">نص الشريط الإخباري (يستطيع الأدمن وضع أي خبر هنا)</label>
+      <input type="text" id="adminTickerInput" placeholder="اكتب الخبر أو التنبيه الذي يظهر في الشريط المتحرك..." />
+      <div class="row-flex" style="margin-bottom: 14px;">
+        <button type="button" class="btn-primary" onclick="saveAdminTicker()">حفظ خبر الشريط</button>
+        <button type="button" class="btn-soft" onclick="resetAdminTicker()">استعادة النص الافتراضي</button>
       </div>
+      <div id="adminTickerStatus" style="font-size: 0.88rem; font-weight: bold; margin-bottom: 12px;"></div>
 
-      <div id="adminGhTokenStatus" class="status">جاهز للفحص وحفظ التوكن.</div>
+      <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 12px 0;" />
+
+      <label for="adminGhTokenInput">رمز GitHub Token (للمستودع aden-aqar/aden-aqar)</label>
+      <input type="password" id="adminGhTokenInput" placeholder="ألصق رمز GitHub Token هنا (github_pat_... أو ghp_...)" autocomplete="off" />
+      <div class="row-flex" style="margin-bottom: 8px;">
+        <button type="button" class="btn-success" onclick="saveAdminGhToken()">حفظ التوكن</button>
+        <button type="button" class="btn-soft" onclick="toggleTokenVisibility()">إظهار / إخفاء</button>
+        <button type="button" class="btn-danger" onclick="clearAdminGhToken()">مسح التوكن يدوياً</button>
+      </div>
+      <div id="adminGhTokenStatus" style="font-size: 0.88rem; font-weight: bold;"></div>
+      <p style="font-size:0.8rem;color:#4b5563;margin-top:6px;">
+        ملاحظة عند ظهور Bad credentials (401): تأكد أن التوكن صحيح وغير منتهي وأن صلاحية Contents: Read and write مفعّلة على المستودع aden-aqar.
+      </p>
+    </section>
+
+    <section class="card">
+      <div class="card-title">البحث عن عقار أو سيارة</div>
+      <div class="row-flex">
+        <div style="flex: 2; min-width: 210px;">
+          <input type="text" id="searchInput" placeholder="ابحث بالاسم أو المنطقة أو الوصف..." oninput="renderListings()" style="margin-bottom: 0;" />
+        </div>
+        <div style="flex: 1; min-width: 140px;">
+          <select id="typeFilter" onchange="renderListings()" style="margin-bottom: 0;">
+            <option value="">كل الأنواع</option>
+            <option value="بيع">بيع</option>
+            <option value="إيجار">إيجار</option>
+            <option value="أخرى">أخرى</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-title">المعروضات المتاحة</div>
+      <div class="listings-grid" id="listingsContainer"></div>
+    </section>
+  </main>
+
+  <!-- نافذة إدخال شفرة الأدمن -->
+  <div class="modal-backdrop" id="adminCodeModal">
+    <div class="modal-box">
+      <div class="card-title">دخول لوحة الأدمن</div>
+      <label for="adminPasscodeInput">أدخل شفرة الأدمن</label>
+      <input type="password" id="adminPasscodeInput" placeholder="أدخل شفرة الأدمن هنا..." autocomplete="off" />
+      <div class="row-flex" style="justify-content: flex-end; margin-top: 8px;">
+        <button type="button" class="btn-primary" onclick="verifyAdminPasscode()">دخول</button>
+        <button type="button" class="btn-secondary" onclick="closeAdminCodeModal()">إلغاء</button>
+      </div>
+      <div id="adminCodeMsg" style="margin-top: 8px; font-size: 0.88rem; font-weight: bold;"></div>
     </div>
+  </div>
 
-    <!-- قسم رفع الصور -->
-    <div id="uploadSection" class="box">
-      <h3>رفع صورة إلى المستودع</h3>
-      <div class="row">
-        <input type="file" id="imageFileInput" accept="image/*" onchange="previewSelectedImage()" />
-        <button type="button" class="success" id="uploadBtn" onclick="uploadImageToGitHub()">رفع الصورة الآن</button>
+  <!-- نافذة إضافة / تعديل المعروض -->
+  <div class="modal-backdrop" id="listingModal">
+    <div class="modal-box">
+      <div class="card-title" id="modalTitle">إضافة معروض جديد</div>
+      <form id="listingForm" onsubmit="handleSaveListing(event)">
+        <input type="hidden" id="editListingId" />
+
+        <label for="itemTitle">عنوان العقار أو السيارة</label>
+        <input type="text" id="itemTitle" placeholder="مثال: شقة 3 غرف في كريتر" required />
+
+        <label for="itemArea">المنطقة / الحي</label>
+        <input type="text" id="itemArea" placeholder="مثال: كريتر - عدن" required />
+
+        <label for="itemType">النوع (إيجار أو بيع أو أخرى)</label>
+        <select id="itemType">
+          <option value="بيع">بيع</option>
+          <option value="إيجار">إيجار</option>
+          <option value="أخرى">أخرى</option>
+        </select>
+
+        <label for="itemSaleStatus">حالة العرض (متوفر أم غير متوفر)</label>
+        <select id="itemSaleStatus">
+          <option value="متوفر">متوفر</option>
+          <option value="غير متوفر">غير متوفر</option>
+        </select>
+
+        <label for="itemPrice">المبلغ المعروض به</label>
+        <input type="text" id="itemPrice" placeholder="مثال: 950,000 أو 4,500,000" required />
+
+        <label for="itemPhone">رقم المعلن (شرط أساسي لإنشاء المعروض - لا يظهر للمشاهدين إلا بعد القسم)</label>
+        <input type="tel" id="itemPhone" placeholder="مثال: 771234567" required />
+
+        <label for="itemImages">صور العقار أو السيارة (كل رابط أو مسار في سطر)</label>
+        <textarea id="itemImages" rows="3" placeholder="images/photo1.jpg&#10;images/photo2.jpg"></textarea>
+
+        <div class="upload-box">
+          <label for="itemFileUpload">تحميل عدة صور من الجهاز إلى مستودع aden-aqar:</label>
+          <input type="file" id="itemFileUpload" accept="image/*" multiple />
+          <div class="row-flex">
+            <button type="button" class="btn-primary" id="startUploadBtn" onclick="uploadSelectedImagesToGitHub()">تحميل الصور المختارة</button>
+            <button type="button" class="btn-danger" id="cancelUploadBtn" onclick="cancelImageUpload()" disabled>إيقاف التحميل</button>
+          </div>
+          <div id="uploadMsg" style="margin-top: 8px; font-size: 0.88rem; font-weight: bold;"></div>
+        </div>
+
+        <label for="itemDesc">تفاصيل إضافية (يُمنع كتابة أي أرقام هنا)</label>
+        <textarea id="itemDesc" rows="3" placeholder="اكتب المواصفات والملاحظات بالكلمات فقط دون أي أرقام..."></textarea>
+
+        <div class="row-flex" style="justify-content: flex-end; margin-top: 8px;">
+          <button type="submit" class="btn-success" id="saveListingBtn">حفظ ونشر المعروض</button>
+          <button type="button" class="btn-secondary" onclick="closeModal()">إلغاء التعديل</button>
+        </div>
+        <div id="formMsg" style="margin-top: 8px; font-size: 0.88rem; font-weight: bold;"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- نافذة القسم لإظهار رقم المعلن -->
+  <div class="modal-backdrop" id="oathModal">
+    <div class="modal-box">
+      <div class="card-title">القسم لإظهار رقم المعلن</div>
+      <input type="hidden" id="oathTargetListingId" />
+      <div class="oath-box">
+        <div class="oath-statement">
+          اقسم بالله اني سادفع 1٪ كدلاله للموقع ع رقم الحساب22846 في بنك عدن الاول
+        </div>
+        <label for="oathConfirmationInput">اكتب في المربع أدناه: أقسم بالله</label>
+        <input type="text" id="oathConfirmationInput" placeholder="اكتب هنا: أقسم بالله" autocomplete="off" />
       </div>
-      <img id="imagePreview" class="preview-img" alt="معاينة الصورة" />
-      <div id="uploadMsg" class="status">اختر صورة ثم اضغط رفع الصورة الآن.</div>
+      <div class="row-flex" style="justify-content: flex-end; margin-top: 10px;">
+        <button type="button" class="btn-success" onclick="verifyOathAndRevealPhone()">إظهار رقم المعلن</button>
+        <button type="button" class="btn-secondary" onclick="closeOathModal()">إغلاق</button>
+      </div>
+      <div id="oathMsg" style="margin-top: 8px; font-size: 0.88rem; font-weight: bold;"></div>
     </div>
   </div>
   <script>
-    const GITHUB_OWNER = 'aden-aqar';
-    const GITHUB_REPO = 'aden-aqar';
-    const GITHUB_BRANCH = 'main';
-    const UPLOAD_FOLDER = 'uploads';
-    const ADMIN_CODE = '9270268911';
-    const TOKEN_STORAGE_KEY = 'aden_aqar_gh_token';
+    // إعدادات المستودع والصفحة الخاصة بـ aden-aqar
+    const ADMIN_PASSCODE = "9270268911";
+    const GH_ACCOUNT = "aden-aqar";
+    const GH_PROJECT = "aden-aqar";
+    const GH_BRANCH = "main";
+    const GH_FOLDER = "images";
+    const GH_TOKEN_STORAGE = "aden_aqar_gh_token_persistent_v1";
 
-    let isAdminUnlocked = false;
-    let isTokenRevealed = false;
+    let isUploadCancelled = false;
+    let activeUploadXhr = null;
+    let activeUploadTimer = null;
+    let isAdminLoggedIn = false;
 
-    function setStatus(elId, text, type = '') {
-      const el = document.getElementById(elId);
-      if (!el) return;
-      el.className = 'status' + (type ? ' ' + type : '');
-      el.textContent = text;
+    function sanitizeTokenValue(raw) {
+      return String(raw || "").trim();
     }
 
-    function cleanToken(raw) {
-      return (raw || '').trim().replace(/^Bearer\s+/i, '');
-    }
-
-    function getSavedToken() {
-      return cleanToken(localStorage.getItem(TOKEN_STORAGE_KEY) || '');
-    }
-
-    function unlockAdmin() {
-      const codeInput = document.getElementById('adminCodeInput');
-      const entered = (codeInput ? codeInput.value : '').trim();
-      const lockMsg = document.getElementById('lockMsg');
-
-      if (entered === ADMIN_CODE) {
-        isAdminUnlocked = true;
-        document.getElementById('adminLockBox').classList.add('hidden');
-        document.getElementById('adminPanel').classList.remove('hidden');
-        if (lockMsg) lockMsg.classList.add('hidden');
-
-        const saved = getSavedToken();
-        const tokenInput = document.getElementById('adminGhTokenInput');
-        if (saved && tokenInput) {
-          tokenInput.value = saved;
-          setStatus('adminGhTokenStatus', 'تم تحميل التوكن المحفوظ مسبقاً. يمكنك الضغط على "فحص المستودع والتوكن" للتأكد.', 'success');
-        } else {
-          setStatus('adminGhTokenStatus', 'لا يوجد توكن محفوظ حالياً. الصق رمز GitHub Token ثم اضغط "حفظ التوكن".');
-        }
-      } else {
-        if (lockMsg) {
-          lockMsg.classList.remove('hidden');
-          setStatus('lockMsg', 'شفرة الدخول غير صحيحة.', 'error');
-        }
-      }
-    }
-
-    function resetAdminSession() {
-      isAdminUnlocked = false;
-      isTokenRevealed = false;
-      const tokenInput = document.getElementById('adminGhTokenInput');
-      if (tokenInput) {
-        tokenInput.type = 'password';
-      }
-      const revealBtn = document.getElementById('toggleRevealBtn');
-      if (revealBtn) revealBtn.textContent = 'طلب إظهار التوكن';
-
-      document.getElementById('adminPanel').classList.add('hidden');
-      document.getElementById('adminLockBox').classList.remove('hidden');
-      document.getElementById('adminCodeInput').value = '';
-    }
-
-    function handleRevealToken() {
-      const tokenInput = document.getElementById('adminGhTokenInput');
-      const revealBtn = document.getElementById('toggleRevealBtn');
-      if (!tokenInput || !revealBtn) return;
-
-      if (!isTokenRevealed) {
-        tokenInput.type = 'text';
-        isTokenRevealed = true;
-        revealBtn.textContent = 'إخفاء التوكن';
-      } else {
-        tokenInput.type = 'password';
-        isTokenRevealed = false;
-        revealBtn.textContent = 'طلب إظهار التوكن';
-      }
-    }
-
-    function saveGitHubToken() {
-      const tokenInput = document.getElementById('adminGhTokenInput');
-      const cleaned = cleanToken(tokenInput ? tokenInput.value : '');
-      if (!cleaned) {
-        setStatus('adminGhTokenStatus', 'يرجى لصق رمز GitHub Token أولاً قبل الحفظ.', 'error');
-        return;
-      }
-      localStorage.setItem(TOKEN_STORAGE_KEY, cleaned);
-      if (tokenInput) tokenInput.value = cleaned;
-      setStatus('adminGhTokenStatus', 'تم حفظ التوكن محلياً بنجاح. اضغط الآن "فحص المستودع والتوكن".', 'success');
-    }
-
-    function clearSavedToken() {
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
-      const tokenInput = document.getElementById('adminGhTokenInput');
-      if (tokenInput) tokenInput.value = '';
-      setStatus('adminGhTokenStatus', 'تم مسح التوكن المحفوظ من المتصفح.');
-    }
-    function getAuthHeaders(token) {
-      return {
-        'Authorization': 'Bearer ' + token,
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type': 'application/json'
-      };
-    }
-
-    async function checkRepoAndTokenStatus() {
-      const tokenInput = document.getElementById('adminGhTokenInput');
-      const token = cleanToken((tokenInput && tokenInput.value) || getSavedToken());
-
-      if (!token) {
-        setStatus('adminGhTokenStatus', 'لا يوجد رمز GitHub Token مدخل أو محفوظ. ألصق التوكن أولاً ثم اضغط حفظ.', 'error');
-        return;
-      }
-
-      setStatus('adminGhTokenStatus', 'جاري فحص التوكن والمستودع والفرع...');
-
+    function getSavedOrTypedToken() {
+      const inputEl = document.getElementById("adminGhTokenInput");
+      const typed = sanitizeTokenValue(inputEl ? inputEl.value : "");
+      let saved = "";
       try {
-        // 1. التحقق من هوية التوكن
-        const userRes = await fetch('https://api.github.com/user', {
-          headers: getAuthHeaders(token)
-        });
+        saved = sanitizeTokenValue(localStorage.getItem(GH_TOKEN_STORAGE) || "");
+      } catch (_) {}
 
-        if (!userRes.ok) {
-          const errText = await userRes.text();
-          setStatus(
-            'adminGhTokenStatus',
-            `فشل التحقق من التوكن (رمز الحالة: ${userRes.status}). تأكد من نسخ التوكن كاملاً دون مسافات ومن أنه لم ينتهِ أو يُجدد.\nالتفاصيل: ${errText}`,
-            'error'
-          );
-          return;
+      const activeToken = typed || saved;
+      if (activeToken) {
+        try {
+          localStorage.setItem(GH_TOKEN_STORAGE, activeToken);
+        } catch (_) {}
+        if (inputEl && !typed) {
+          inputEl.value = activeToken;
         }
+      }
+      return activeToken;
+    }
 
-        const userData = await userRes.json();
+    function syncAdminTokenUI(keepCurrentInput = true) {
+      const inputEl = document.getElementById("adminGhTokenInput");
+      const statusEl = document.getElementById("adminGhTokenStatus");
+      let saved = "";
+      try {
+        saved = sanitizeTokenValue(localStorage.getItem(GH_TOKEN_STORAGE) || "");
+      } catch (_) {}
 
-        // 2. التحقق من المستودع والفرع
-        const repoUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/branches/${encodeURIComponent(GITHUB_BRANCH)}`;
-        const repoRes = await fetch(repoUrl, {
-          headers: getAuthHeaders(token)
-        });
-
-        if (repoRes.status === 404) {
-          setStatus(
-            'adminGhTokenStatus',
-            `التوكن صحيح (الحساب: ${userData.login})، لكن تعذر العثور على المستودع أو الفرع (404):\nالمسار المفحوص: ${GITHUB_OWNER}/${GITHUB_REPO} (الفرع: ${GITHUB_BRANCH}).\nتأكد من أن الفرع اسمه "${GITHUB_BRANCH}" وأن المستودع مضاف ضمن Repository access في التوكن.`,
-            'error'
-          );
-          return;
+      if (inputEl) {
+        if (keepCurrentInput && sanitizeTokenValue(inputEl.value)) {
+          // الحفاظ على النص المكتوب في الخانة دون مسحه
+        } else if (saved) {
+          inputEl.value = saved;
         }
+      }
 
-        if (!repoRes.ok) {
-          const errText = await repoRes.text();
-          setStatus(
-            'adminGhTokenStatus',
-            `تعذر الوصول للفرع (رمز الحالة: ${repoRes.status}).\nالتفاصيل: ${errText}`,
-            'error'
-          );
-          return;
+      const currentVal = sanitizeTokenValue(inputEl ? inputEl.value : "") || saved;
+      if (statusEl) {
+        if (currentVal) {
+          statusEl.style.color = "#14532d";
+          statusEl.textContent = "التوكن محفوظ في المتصفح ولن يُمسح تلقائياً.";
+        } else {
+          statusEl.style.color = "#b91c1c";
+          statusEl.textContent = "أدخل رمز GitHub Token ثم اضغط (حفظ التوكن).";
         }
-
-        const branchData = await repoRes.json();
-        setStatus(
-          'adminGhTokenStatus',
-          `نجح الفحص بالكامل!\nالحساب المتصل: ${userData.login}\nالمستودع: ${GITHUB_OWNER}/${GITHUB_REPO}\nالفرع: ${branchData.name}\nيمكنك الآن رفع الصور بأمان.`,
-          'success'
-        );
-      } catch (err) {
-        setStatus(
-          'adminGhTokenStatus',
-          `حدث خطأ في الشبكة أثناء الفحص: ${err && err.message ? err.message : err}`,
-          'error'
-        );
       }
     }
-    function previewSelectedImage() {
-      const fileInput = document.getElementById('imageFileInput');
-      const previewImg = document.getElementById('imagePreview');
-      const file = fileInput && fileInput.files ? fileInput.files[0] : null;
 
-      if (!file) {
-        if (previewImg) {
-          previewImg.src = '';
-          previewImg.style.display = 'none';
+    function saveAdminGhToken() {
+      const inputEl = document.getElementById("adminGhTokenInput");
+      const statusEl = document.getElementById("adminGhTokenStatus");
+      const clean = sanitizeTokenValue(inputEl ? inputEl.value : "");
+      if (!clean) {
+        if (statusEl) {
+          statusEl.style.color = "#c62828";
+          statusEl.textContent = "الخانة فارغة، ألصق رمز التوكن أولاً.";
+        }
+        return;
+      }
+      try {
+        localStorage.setItem(GH_TOKEN_STORAGE, clean);
+      } catch (_) {}
+      if (inputEl) inputEl.value = clean;
+      if (statusEl) {
+        statusEl.style.color = "#14532d";
+        statusEl.textContent = "تم حفظ التوكن بنجاح.";
+      }
+    }
+
+    function clearAdminGhToken() {
+      try {
+        localStorage.removeItem(GH_TOKEN_STORAGE);
+      } catch (_) {}
+      const inputEl = document.getElementById("adminGhTokenInput");
+      if (inputEl) inputEl.value = "";
+      syncAdminTokenUI(false);
+    }
+
+    function toggleTokenVisibility() {
+      const inputEl = document.getElementById("adminGhTokenInput");
+      if (!inputEl) return;
+      inputEl.type = inputEl.type === "password" ? "text" : "password";
+    }
+
+    function openAdminCodeModal() {
+      const modal = document.getElementById("adminCodeModal");
+      const inputEl = document.getElementById("adminPasscodeInput");
+      const msgEl = document.getElementById("adminCodeMsg");
+      if (inputEl) inputEl.value = "";
+      if (msgEl) msgEl.textContent = "";
+      if (modal) modal.style.display = "flex";
+      setTimeout(() => {
+        if (inputEl) inputEl.focus();
+      }, 60);
+    }
+
+    function closeAdminCodeModal() {
+      const modal = document.getElementById("adminCodeModal");
+      if (modal) modal.style.display = "none";
+    }
+
+    function verifyAdminPasscode() {
+      const inputEl = document.getElementById("adminPasscodeInput");
+      const msgEl = document.getElementById("adminCodeMsg");
+      const panel = document.getElementById("adminPanel");
+      const entered = String(inputEl ? inputEl.value : "").trim();
+
+      if (entered !== ADMIN_PASSCODE) {
+        if (msgEl) {
+          msgEl.style.color = "#c62828";
+          msgEl.textContent = "شفرة الأدمن غير صحيحة.";
         }
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        if (previewImg) {
-          previewImg.src = e.target.result;
-          previewImg.style.display = 'block';
-        }
-      };
-      reader.readAsDataURL(file);
+      isAdminLoggedIn = true;
+      closeAdminCodeModal();
+      if (panel) panel.classList.remove("hidden");
+      syncAdminTokenUI(true);
+      syncAdminTickerUI();
+      renderListings();
     }
 
-    function fileToBase64(file) {
+    function lockAdminPanel() {
+      isAdminLoggedIn = false;
+      const panel = document.getElementById("adminPanel");
+      if (panel) panel.classList.add("hidden");
+      renderListings();
+    }
+
+    function toggleAdminPanel() {
+      const panel = document.getElementById("adminPanel");
+      if (!panel) return;
+      if (!panel.classList.contains("hidden")) {
+        lockAdminPanel();
+        return;
+      }
+      if (isAdminLoggedIn) {
+        panel.classList.remove("hidden");
+        syncAdminTokenUI(true);
+        syncAdminTickerUI();
+        renderListings();
+      } else {
+        openAdminCodeModal();
+      }
+    }
+
+    function setUploadButtonsState(isUploading) {
+      const startBtn = document.getElementById("startUploadBtn");
+      const cancelBtn = document.getElementById("cancelUploadBtn");
+      if (startBtn) startBtn.disabled = Boolean(isUploading);
+      if (cancelBtn) cancelBtn.disabled = !Boolean(isUploading);
+    }
+
+    function cancelImageUpload() {
+      isUploadCancelled = true;
+      if (activeUploadTimer) {
+        clearTimeout(activeUploadTimer);
+        activeUploadTimer = null;
+      }
+      if (activeUploadXhr) {
+        try {
+          activeUploadXhr.abort();
+        } catch (_) {}
+        activeUploadXhr = null;
+      }
+      const msgEl = document.getElementById("uploadMsg");
+      if (msgEl) {
+        msgEl.style.color = "#b91c1c";
+        msgEl.textContent = "تم إيقاف التحميل.";
+      }
+      setUploadButtonsState(false);
+      syncAdminTokenUI(true);
+    }
+
+    function readFileAsBase64Direct(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
-          const result = String(reader.result || '');
-          const base64Part = result.includes(',') ? result.split(',')[1] : result;
-          resolve(base64Part);
+          const result = String(reader.result || "");
+          const commaIndex = result.indexOf(",");
+          const b64 = commaIndex !== -1 ? result.slice(commaIndex + 1) : result;
+          const extMatch = (file.name || "").split(".").pop() || "jpg";
+          const cleanExt = extMatch.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "jpg";
+          resolve({ base64: b64, ext: cleanExt });
         };
-        reader.onerror = reject;
+        reader.onerror = () => reject(new Error("تعذر قراءة ملف الصورة من الجهاز."));
         reader.readAsDataURL(file);
       });
     }
 
-    function sanitizeFileName(name) {
-      return String(name || 'image.jpg')
-        .toLowerCase()
-        .replace(/[^a-z0-9._-]/g, '_')
-        .replace(/_+/g, '_');
+    function xhrPutGitHubFile(url, token, authPrefix, payload) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        activeUploadXhr = xhr;
+        xhr.open("PUT", url, true);
+        xhr.setRequestHeader("Authorization", `${authPrefix} ${token}`);
+        xhr.setRequestHeader("Accept", "application/vnd.github+json");
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        activeUploadTimer = setTimeout(() => {
+          try {
+            xhr.abort();
+          } catch (_) {}
+          reject(new Error("انتهت مهلة الاتصال بـ GitHub (30 ثانية)."));
+        }, 30000);
+
+        xhr.onload = () => {
+          if (activeUploadTimer) {
+            clearTimeout(activeUploadTimer);
+            activeUploadTimer = null;
+          }
+          activeUploadXhr = null;
+          let parsed = null;
+          try {
+            parsed = JSON.parse(xhr.responseText || "{}");
+          } catch (_) {}
+          resolve({
+            ok: xhr.status >= 200 && xhr.status < 300,
+            status: xhr.status,
+            data: parsed,
+            rawText: xhr.responseText || ""
+          });
+        };
+
+        xhr.onerror = () => {
+          if (activeUploadTimer) {
+            clearTimeout(activeUploadTimer);
+            activeUploadTimer = null;
+          }
+          activeUploadXhr = null;
+          reject(new Error("تعذر الوصول إلى api.github.com (تحقق من الاتصال بالإنترنت أو المتصفح)."));
+        };
+
+        xhr.onabort = () => {
+          if (activeUploadTimer) {
+            clearTimeout(activeUploadTimer);
+            activeUploadTimer = null;
+          }
+          activeUploadXhr = null;
+          reject(new Error("تم إلغاء عملية الرفع."));
+        };
+
+        xhr.send(JSON.stringify(payload));
+      });
     }
 
-    async function uploadImageToGitHub() {
-      const fileInput = document.getElementById('imageFileInput');
-      const uploadBtn = document.getElementById('uploadBtn');
-      const file = fileInput && fileInput.files ? fileInput.files[0] : null;
-      const token = getSavedToken();
+    async function uploadSelectedImagesToGitHub() {
+      const fileEl = document.getElementById("itemFileUpload");
+      const imgsEl = document.getElementById("itemImages");
+      const msgEl = document.getElementById("uploadMsg");
 
+      if (!fileEl || !fileEl.files || !fileEl.files.length) {
+        msgEl.style.color = "#c62828";
+        msgEl.textContent = "اختر صورة أو أكثر أولاً.";
+        return;
+      }
+
+      const token = getSavedOrTypedToken();
       if (!token) {
-        setStatus('uploadMsg', 'لم يتم العثور على رمز GitHub Token محفوظ. ادخل لوحة الأدمن واحفظ التوكن أولاً.', 'error');
+        msgEl.style.color = "#c62828";
+        msgEl.textContent = "أدخل التوكن في لوحة الأدمن واضغط حفظ التوكن أولاً.";
         return;
       }
 
-      if (!file) {
-        setStatus('uploadMsg', 'يرجى اختيار صورة أولاً قبل الضغط على رفع الصورة.', 'error');
-        return;
-      }
+      isUploadCancelled = false;
+      setUploadButtonsState(true);
+      msgEl.style.color = "#0b3c8a";
 
-      if (!file.type || !file.type.startsWith('image/')) {
-        setStatus('uploadMsg', 'الملف المختار ليس صورة صالحة.', 'error');
-        return;
-      }
-
+      const uploadedUrls = [];
       try {
-        if (uploadBtn) uploadBtn.disabled = true;
-        setStatus('uploadMsg', 'جاري تجهيز الصورة ورفعها إلى المستودع...');
+        for (let i = 0; i < fileEl.files.length; i++) {
+          if (isUploadCancelled) break;
+          const f = fileEl.files[i];
+          msgEl.textContent = `جاري رفع الصورة ${i + 1} من ${fileEl.files.length}...`;
 
-        const base64Content = await fileToBase64(file);
-        const safeName = sanitizeFileName(file.name);
-        const uniqueName = `${Date.now()}_${safeName}`;
-        const filePath = `${UPLOAD_FOLDER}/${uniqueName}`;
-        const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`;
+          const fileInfo = await readFileAsBase64Direct(f);
+          if (isUploadCancelled) break;
 
-        const response = await fetch(apiUrl, {
-          method: 'PUT',
-          headers: getAuthHeaders(token),
-          body: JSON.stringify({
-            message: `Upload image ${uniqueName} via aden-aqar`,
-            content: base64Content,
-            branch: GITHUB_BRANCH
-          })
-        });
+          const fileName = `${Date.now()}-${i + 1}-aqar.${fileInfo.ext}`;
+          const endpoint = `https://api.github.com/repos/${GH_ACCOUNT}/${GH_PROJECT}/contents/${GH_FOLDER}/${fileName}`;
+          const payload = {
+            message: `Upload ${fileName}`,
+            content: fileInfo.base64,
+            branch: GH_BRANCH
+          };
 
-        const data = await response.json();
+          let res = await xhrPutGitHubFile(endpoint, token, "Bearer", payload);
+          if (!res.ok && res.status === 401 && !isUploadCancelled) {
+            res = await xhrPutGitHubFile(endpoint, token, "token", payload);
+          }
 
-        if (!response.ok) {
-          setStatus(
-            'uploadMsg',
-            `فشل رفع الصورة (رمز الحالة: ${response.status}).\nالرسالة: ${data && data.message ? data.message : 'خطأ غير معروف'}`,
-            'error'
-          );
-          return;
+          if (!res.ok) {
+            const ghMsg = res.data && res.data.message ? res.data.message : res.rawText;
+            throw new Error(`فشل الرفع للصورة ${i + 1} (كود ${res.status}): ${ghMsg || "تحقق من صلاحيات التوكن على المستودع aden-aqar/aden-aqar"}`);
+          }
+
+          uploadedUrls.push(`${GH_FOLDER}/${fileName}`);
         }
 
-        const rawUrl = data.content && data.content.download_url
-          ? data.content.download_url
-          : `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${filePath}`;
+        if (uploadedUrls.length && imgsEl) {
+          const existing = imgsEl.value.split(/\n+/).map(s => s.trim()).filter(Boolean);
+          imgsEl.value = existing.concat(uploadedUrls).join("\n");
+        }
 
-        setStatus(
-          'uploadMsg',
-          `تم رفع الصورة بنجاح!\nالمسار في المستودع: ${filePath}\nرابط الصورة المباشر:\n${rawUrl}`,
-          'success'
-        );
+        if (!isUploadCancelled) {
+          fileEl.value = "";
+          msgEl.style.color = "#1b5e20";
+          msgEl.textContent = `تم رفع ${uploadedUrls.length} صورة بنجاح.`;
+        }
       } catch (err) {
-        setStatus(
-          'uploadMsg',
-          `حدث خطأ أثناء رفع الصورة: ${err && err.message ? err.message : err}`,
-          'error'
-        );
+        if (!isUploadCancelled) {
+          msgEl.style.color = "#c62828";
+          msgEl.textContent = err && err.message ? err.message : "تعذر رفع الصور.";
+        }
       } finally {
-        if (uploadBtn) uploadBtn.disabled = false;
+        activeUploadXhr = null;
+        if (activeUploadTimer) {
+          clearTimeout(activeUploadTimer);
+          activeUploadTimer = null;
+        }
+        setUploadButtonsState(false);
+        syncAdminTokenUI(true);
       }
     }
+  </script>
+  <script>
+    const OWNER_ID_STORAGE_KEY = "aden_aqar_owner_key_v1";
+    const TICKER_STORAGE_KEY = "aden_aqar_custom_ticker_v1";
+    const DEFAULT_TICKER_TEXT = "مرحباً بكم في منصة عدن للعقارات والسيارات - تصفح أحدث العروض العقارية والمركبات في عدن - إدارة النشر والصور عبر لوحة الأدمن";
+    const LISTINGS_STORAGE_KEY = "aden_aqar_listings_v1";
+
+    const revealedPhonesSession = {};
+
+    function getOrCreateOwnerKey() {
+      try {
+        let key = localStorage.getItem(OWNER_ID_STORAGE_KEY);
+        if (!key) {
+          key = "owner-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+          localStorage.setItem(OWNER_ID_STORAGE_KEY, key);
+        }
+        return key;
+      } catch (_) {
+        return "session-owner";
+      }
+    }
+
+    function isListingOwner(item) {
+      const myKey = getOrCreateOwnerKey();
+      return Boolean(item && item.ownerKey && String(item.ownerKey) === String(myKey));
+    }
+
+    function isItemAvailable(item) {
+      return String(item && item.saleStatus ? item.saleStatus : "متوفر") !== "غير متوفر" &&
+             String(item && item.saleStatus ? item.saleStatus : "") !== "تم البيع";
+    }
+
+    function hasAnyDigit(text) {
+      return /[0-9٠-٩]/.test(String(text || ""));
+    }
+
+    function normalizeOathPhrase(text) {
+      return String(text || "")
+        .replace(/[أإآ]/g, "ا")
+        .replace(/ى/g, "ي")
+        .replace(/ة/g, "ه")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function isValidOathInput(text) {
+      return normalizeOathPhrase(text) === "اقسم بالله";
+    }
+
+    function loadTickerText() {
+      try {
+        const saved = localStorage.getItem(TICKER_STORAGE_KEY);
+        if (saved && String(saved).trim()) {
+          return String(saved).trim();
+        }
+      } catch (_) {}
+      return DEFAULT_TICKER_TEXT;
+    }
+
+    function applyTickerText(text) {
+      const clean = String(text || "").trim() || DEFAULT_TICKER_TEXT;
+      const tickerEl = document.getElementById("newsTickerText");
+      if (tickerEl) {
+        tickerEl.textContent = clean;
+      }
+    }
+
+    function syncAdminTickerUI() {
+      const inputEl = document.getElementById("adminTickerInput");
+      if (inputEl) {
+        inputEl.value = loadTickerText();
+      }
+    }
+
+    function saveAdminTicker() {
+      const inputEl = document.getElementById("adminTickerInput");
+      const statusEl = document.getElementById("adminTickerStatus");
+      const val = String(inputEl ? inputEl.value : "").trim();
+      if (!val) {
+        if (statusEl) {
+          statusEl.style.color = "#c62828";
+          statusEl.textContent = "اكتب نص الخبر أولاً قبل الحفظ.";
+        }
+        return;
+      }
+      try {
+        localStorage.setItem(TICKER_STORAGE_KEY, val);
+      } catch (_) {}
+      applyTickerText(val);
+      if (statusEl) {
+        statusEl.style.color = "#14532d";
+        statusEl.textContent = "تم حفظ خبر الشريط الإخباري وتحديثه.";
+      }
+    }
+
+    function resetAdminTicker() {
+      try {
+        localStorage.removeItem(TICKER_STORAGE_KEY);
+      } catch (_) {}
+      applyTickerText(DEFAULT_TICKER_TEXT);
+      syncAdminTickerUI();
+      const statusEl = document.getElementById("adminTickerStatus");
+      if (statusEl) {
+        statusEl.style.color = "#14532d";
+        statusEl.textContent = "تمت استعادة النص الافتراضي للشريط الإخباري.";
+      }
+    }
+
+    function updateClockAndDates() {
+      const now = new Date();
+      const clockEl = document.getElementById("liveClockDisplay");
+      const gregEl = document.getElementById("liveGregorianDateDisplay");
+      const hijriEl = document.getElementById("liveHijriDateDisplay");
+
+      if (clockEl) {
+        let timeStr = "";
+        try {
+          timeStr = now.toLocaleTimeString("ar-YE", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
+          });
+        } catch (_) {
+          timeStr = now.toLocaleTimeString("ar");
+        }
+        clockEl.textContent = `الساعة: ${timeStr}`;
+      }
+
+      if (gregEl) {
+        let gregStr = "";
+        try {
+          gregStr = now.toLocaleDateString("ar-YE", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+          });
+        } catch (_) {
+          gregStr = now.toLocaleDateString("ar");
+        }
+        gregEl.textContent = `التاريخ: ${gregStr}`;
+      }
+
+      if (hijriEl) {
+        let hijriStr = "";
+        try {
+          hijriStr = new Intl.DateTimeFormat("ar-SA-u-ca-islamic", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+          }).format(now);
+        } catch (_) {
+          hijriStr = now.toLocaleDateString("ar");
+        }
+        hijriEl.textContent = `الهجري: ${hijriStr}`;
+      }
+    }
+
+    const DEFAULT_LISTINGS = [
+      {
+        id: "sample-1",
+        ownerKey: "system-default",
+        title: "شقة سكنية ثلاث غرف وحمامين",
+        area: "كريتر - عدن",
+        type: "بيع",
+        saleStatus: "متوفر",
+        price: "45,000,000",
+        phone: "770000001",
+        images: ["images/sample-flat.jpg"],
+        desc: "تشطيب جيد وقريبة من الخدمات والشارع العام."
+      },
+      {
+        id: "sample-2",
+        ownerKey: "system-default",
+        title: "شقة مفروشة للإيجار الشهري",
+        area: "المعلا - عدن",
+        type: "إيجار",
+        saleStatus: "متوفر",
+        price: "350,000",
+        phone: "770000002",
+        images: ["images/sample-rent.jpg"],
+        desc: "مناسبة للعائلات وتتوفر فيها خدمات المياه والكهرباء."
+      }
+    ];
+
+    function loadListings() {
+      try {
+        const raw = localStorage.getItem(LISTINGS_STORAGE_KEY);
+        if (!raw) {
+          localStorage.setItem(LISTINGS_STORAGE_KEY, JSON.stringify(DEFAULT_LISTINGS));
+          return DEFAULT_LISTINGS.slice();
+        }
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : DEFAULT_LISTINGS.slice();
+      } catch (_) {
+        return DEFAULT_LISTINGS.slice();
+      }
+    }
+
+    function saveListings(list) {
+      try {
+        localStorage.setItem(LISTINGS_STORAGE_KEY, JSON.stringify(list));
+      } catch (_) {}
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function resolveImageSrc(rawSrc) {
+      const clean = String(rawSrc || "").trim();
+      if (!clean) {
+        return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240" viewBox="0 0 400 240">
+            <rect width="400" height="240" fill="#e5e7eb"/>
+            <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#4b5563" font-family="Tahoma,Arial" font-size="18">لا توجد صورة متاحة</text>
+          </svg>`
+        );
+      }
+      if (/^https?:\/\//i.test(clean) || clean.startsWith("data:")) {
+        return clean;
+      }
+      return clean.replace(/^\.?\//, "");
+    }
+
+    function updateCounters(totalCount, visibleCount) {
+      const totalEl = document.getElementById("totalListingsCounter");
+      const visibleEl = document.getElementById("visibleListingsCounter");
+      if (totalEl) totalEl.textContent = `عدد المعروضات: ${totalCount}`;
+      if (visibleEl) visibleEl.textContent = `المعروض الظاهر: ${visibleCount}`;
+    }
+
+    function openOathModal(listingId) {
+      const modal = document.getElementById("oathModal");
+      const idEl = document.getElementById("oathTargetListingId");
+      const inputEl = document.getElementById("oathConfirmationInput");
+      const msgEl = document.getElementById("oathMsg");
+
+      if (idEl) idEl.value = listingId;
+      if (inputEl) inputEl.value = "";
+      if (msgEl) msgEl.textContent = "";
+      if (modal) modal.style.display = "flex";
+    }
+
+    function closeOathModal() {
+      const modal = document.getElementById("oathModal");
+      if (modal) modal.style.display = "none";
+    }
+
+    function verifyOathAndRevealPhone() {
+      const idEl = document.getElementById("oathTargetListingId");
+      const inputEl = document.getElementById("oathConfirmationInput");
+      const msgEl = document.getElementById("oathMsg");
+      const targetId = String(idEl ? idEl.value : "");
+      const typedOath = inputEl ? inputEl.value : "";
+
+      if (!isValidOathInput(typedOath)) {
+        if (msgEl) {
+          msgEl.style.color = "#c62828";
+          msgEl.textContent = "يرجى كتابة (أقسم بالله) بشكل صحيح في المربع لإظهار رقم المعلن.";
+        }
+        return;
+      }
+
+      const found = loadListings().find(x => String(x.id) === targetId);
+      if (!found || !found.phone) {
+        if (msgEl) {
+          msgEl.style.color = "#c62828";
+          msgEl.textContent = "تعذر العثور على رقم المعلن لهذا العرض.";
+        }
+        return;
+      }
+
+      revealedPhonesSession[targetId] = String(found.phone);
+      closeOathModal();
+      renderListings();
+    }
+
+    function toggleSaleStatusQuick(id) {
+      const list = loadListings();
+      const idx = list.findIndex(x => String(x.id) === String(id));
+      if (idx === -1) return;
+      if (!isListingOwner(list[idx])) {
+        alert("تغيير حالة العرض متاح لمنشئ المعروض فقط.");
+        return;
+      }
+      const currentlyAvailable = isItemAvailable(list[idx]);
+      list[idx].saleStatus = currentlyAvailable ? "غير متوفر" : "متوفر";
+      saveListings(list);
+      renderListings();
+    }
+
+    function renderListings() {
+      const all = loadListings();
+      const q = String((document.getElementById("searchInput") || {}).value || "").trim().toLowerCase();
+      const t = String((document.getElementById("typeFilter") || {}).value || "").trim();
+      const container = document.getElementById("listingsContainer");
+
+      const filtered = all.filter(item => {
+        const matchType = !t || item.type === t;
+        const statusText = isItemAvailable(item) ? "متوفر" : "غير متوفر";
+        const hay = `${item.title || ""} ${item.area || ""} ${item.desc || ""} ${item.type || ""} ${statusText}`.toLowerCase();
+        const matchQuery = !q || hay.includes(q);
+        return matchType && matchQuery;
+      });
+
+      updateCounters(all.length, filtered.length);
+
+      if (!container) return;
+      if (!filtered.length) {
+        container.innerHTML = `<p style="color:#4b5563;">لا توجد معروضات مطابقة للبحث الحالي.</p>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        const imgs = Array.isArray(item.images) && item.images.length ? item.images : [""];
+        const firstImg = resolveImageSrc(imgs[0]);
+        const fallbackImg = resolveImageSrc("");
+        const available = isItemAvailable(item);
+        const statusClass = available ? "status-available" : "status-sold";
+        const statusLabel = available ? "متوفر" : "غير متوفر";
+
+        const canEdit = isListingOwner(item);
+        const canDelete = isAdminLoggedIn || isListingOwner(item);
+        const isPhoneRevealed = Boolean(revealedPhonesSession[String(item.id)]);
+
+        const phoneSectionHtml = isPhoneRevealed
+          ? `<div class="phone-reveal-box">رقم المعلن: ${escapeHtml(revealedPhonesSession[String(item.id)])}</div>`
+          : `<button type="button" class="btn-success" style="width:100%;margin:8px 0;" onclick="openOathModal('${escapeHtml(item.id)}')">اضغط لمعرفة الرقم</button>`;
+
+        // أيقونة أمام حالة المعروض لمنشئ الإعلان فقط لتبديل الحالة بين متوفر وغير متوفر
+        const ownerIconBtn = canEdit
+          ? `<button type="button"
+              class="owner-status-icon-btn ${available ? "is-available" : "is-unavailable"}"
+              title="${available ? "تحويل الإعلان إلى غير متوفر" : "تحويل الإعلان إلى متوفر"}"
+              aria-label="${available ? "تحويل الإعلان إلى غير متوفر" : "تحويل الإعلان إلى متوفر"}"
+              onclick="toggleSaleStatusQuick('${escapeHtml(item.id)}')">
+              <span>${available ? "🔒" : "🔓"}</span>
+              <span>${available ? "جعله غير متوفر" : "جعله متوفر"}</span>
+            </button>`
+          : "";
+
+        const editBtn = canEdit
+          ? `<button type="button" class="btn-soft" onclick="openModal('${escapeHtml(item.id)}')">تعديل</button>`
+          : "";
+
+        const deleteBtn = canDelete
+          ? `<button type="button" class="btn-danger" onclick="deleteListing('${escapeHtml(item.id)}')">حذف</button>`
+          : "";
+
+        return `
+          <article class="listing-card">
+            <img class="listing-img" src="${escapeHtml(firstImg)}" alt="${escapeHtml(item.title)}" onerror="this.onerror=null;this.src='${fallbackImg}';" />
+            <div class="listing-body">
+              <div>
+                <div class="listing-top-bar">
+                  <span class="status-badge ${statusClass}">${available ? "✅" : "⛔"} ${statusLabel}</span>
+                  ${ownerIconBtn}
+                </div>
+                <h3 style="font-size:1.02rem;color:#111827;">${escapeHtml(item.title)}</h3>
+                <div class="listing-meta">${escapeHtml(item.area)} — النوع: <strong>${escapeHtml(item.type)}</strong></div>
+                <div class="listing-price">المبلغ: ${escapeHtml(item.price)}</div>
+                <p style="font-size:0.88rem;color:#374151;margin-bottom:6px;">${escapeHtml(item.desc || "")}</p>
+                ${phoneSectionHtml}
+              </div>
+              <div class="row-flex">
+                ${editBtn}
+                ${deleteBtn}
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+    function resetFilters() {
+      const searchEl = document.getElementById("searchInput");
+      const typeEl = document.getElementById("typeFilter");
+      if (searchEl) searchEl.value = "";
+      if (typeEl) typeEl.value = "";
+      renderListings();
+    }
+
+    function openModal(editId = "") {
+      const modal = document.getElementById("listingModal");
+      const titleEl = document.getElementById("modalTitle");
+      const formMsg = document.getElementById("formMsg");
+      const uploadMsg = document.getElementById("uploadMsg");
+      if (formMsg) formMsg.textContent = "";
+      if (uploadMsg) uploadMsg.textContent = "";
+
+      document.getElementById("editListingId").value = "";
+      document.getElementById("itemTitle").value = "";
+      document.getElementById("itemArea").value = "";
+      document.getElementById("itemType").value = "بيع";
+      document.getElementById("itemSaleStatus").value = "متوفر";
+      document.getElementById("itemPrice").value = "";
+      document.getElementById("itemPhone").value = "";
+      document.getElementById("itemImages").value = "";
+      document.getElementById("itemDesc").value = "";
+      document.getElementById("itemFileUpload").value = "";
+
+      if (editId) {
+        const found = loadListings().find(x => String(x.id) === String(editId));
+        if (!found) return;
+        if (!isListingOwner(found)) {
+          alert("عذراً، تعديل هذا المعروض متاح فقط لمن قام بإنشائه.");
+          return;
+        }
+        if (titleEl) titleEl.textContent = "تعديل المعروض";
+        document.getElementById("editListingId").value = found.id;
+        document.getElementById("itemTitle").value = found.title || "";
+        document.getElementById("itemArea").value = found.area || "";
+        document.getElementById("itemType").value = found.type || "بيع";
+        document.getElementById("itemSaleStatus").value = isItemAvailable(found) ? "متوفر" : "غير متوفر";
+        document.getElementById("itemPrice").value = found.price || "";
+        document.getElementById("itemPhone").value = found.phone || "";
+        document.getElementById("itemImages").value = Array.isArray(found.images) ? found.images.join("\n") : "";
+        document.getElementById("itemDesc").value = found.desc || "";
+      } else if (titleEl) {
+        titleEl.textContent = "إضافة معروض جديد";
+      }
+
+      if (modal) modal.style.display = "flex";
+    }
+
+    function closeModal() {
+      const modal = document.getElementById("listingModal");
+      if (modal) modal.style.display = "none";
+    }
+
+    function handleSaveListing(event) {
+      event.preventDefault();
+      const formMsg = document.getElementById("formMsg");
+      const editId = document.getElementById("editListingId").value.trim();
+      const title = document.getElementById("itemTitle").value.trim();
+      const area = document.getElementById("itemArea").value.trim();
+      const type = document.getElementById("itemType").value.trim() || "بيع";
+      const saleStatus = document.getElementById("itemSaleStatus").value === "غير متوفر" ? "غير متوفر" : "متوفر";
+      const price = document.getElementById("itemPrice").value.trim();
+      const phone = document.getElementById("itemPhone").value.trim();
+      const desc = document.getElementById("itemDesc").value.trim();
+      const images = document.getElementById("itemImages").value
+        .split(/\n+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      if (!title || !area || !price || !phone) {
+        if (formMsg) {
+          formMsg.style.color = "#c62828";
+          formMsg.textContent = "يرجى تعبئة العنوان والمنطقة والمبلغ ورقم المعلن (شرط أساسي).";
+        }
+        return;
+      }
+
+      if (hasAnyDigit(desc)) {
+        if (formMsg) {
+          formMsg.style.color = "#c62828";
+          formMsg.textContent = "يُمنع كتابة أي أرقام داخل تفاصيل العرض. يرجى إزالة الأرقام من التفاصيل.";
+        }
+        return;
+      }
+
+      const list = loadListings();
+      const myOwnerKey = getOrCreateOwnerKey();
+
+      if (editId) {
+        const idx = list.findIndex(x => String(x.id) === String(editId));
+        if (idx !== -1) {
+          if (!isListingOwner(list[idx])) {
+            if (formMsg) {
+              formMsg.style.color = "#c62828";
+              formMsg.textContent = "لا تملك صلاحية تعديل هذا المعروض.";
+            }
+            return;
+          }
+          list[idx] = {
+            ...list[idx],
+            title,
+            area,
+            type,
+            saleStatus,
+            price,
+            phone,
+            images,
+            desc
+          };
+        }
+      } else {
+        list.unshift({
+          id: `item-${Date.now()}`,
+          ownerKey: myOwnerKey,
+          title,
+          area,
+          type,
+          saleStatus,
+          price,
+          phone,
+          images,
+          desc
+        });
+      }
+
+      saveListings(list);
+      renderListings();
+      if (formMsg) {
+        formMsg.style.color = "#1b5e20";
+        formMsg.textContent = "تم حفظ ونشر المعروض بنجاح.";
+      }
+      setTimeout(() => closeModal(), 450);
+    }
+
+    function deleteListing(id) {
+      const list = loadListings();
+      const target = list.find(x => String(x.id) === String(id));
+      if (!target) return;
+      if (!isAdminLoggedIn && !isListingOwner(target)) {
+        alert("الحذف متاح لمنشئ المعروض أو للأدمن من لوحة الإدارة.");
+        return;
+      }
+      const updated = list.filter(x => String(x.id) !== String(id));
+      saveListings(updated);
+      renderListings();
+    }
+
+    function clearAllListingsByAdmin() {
+      if (!isAdminLoggedIn) {
+        alert("افتح لوحة الأدمن بالشفرة أولاً لتفعيل صلاحية الحذف.");
+        return;
+      }
+      saveListings([]);
+      renderListings();
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      getOrCreateOwnerKey();
+      applyTickerText(loadTickerText());
+      syncAdminTickerUI();
+      syncAdminTokenUI(false);
+      setUploadButtonsState(false);
+      updateClockAndDates();
+      setInterval(updateClockAndDates, 1000);
+      renderListings();
+    });
   </script>
 </body>
 </html>
