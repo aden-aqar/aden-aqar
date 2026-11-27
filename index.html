@@ -10,7 +10,7 @@
       --blue2: #1565c0;
       --red: #d32f2f;
       --green: #1b5e20;
-      --amber: #b45309;
+      --purple: #5b21b6;
       --bg: #eef3fb;
       --card: #ffffff;
       --ink: #0f172a;
@@ -136,7 +136,7 @@
     .btn-blue { background: var(--blue2); }
     .btn-green { background: var(--green); }
     .btn-red { background: var(--red); }
-    .btn-amber { background: var(--amber); }
+    .btn-purple { background: var(--purple); }
     .btn-gray { background: #64748b; }
     .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 
@@ -158,14 +158,6 @@
       padding: 12px;
       margin-top: 12px;
     }
-    .offer-item-card {
-      background: #fffbeb;
-      border: 1px solid #fde68a;
-      border-right: 4px solid var(--amber);
-      border-radius: 10px;
-      padding: 12px;
-      margin-top: 12px;
-    }
     .msg-reply-box {
       margin-top: 8px;
       background: #eef6ff;
@@ -175,6 +167,18 @@
       font-size: 13px;
       color: #0f172a;
     }
+    .admin-direct-phone {
+      display: none;
+      margin-top: 8px;
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      color: #78350f;
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    body.owner-admin-mode .admin-direct-phone { display: block; }
 
     .modal-backdrop {
       display: none;
@@ -232,6 +236,7 @@
       margin-bottom: 14px;
     }
     .listings-header h2 { margin: 0; font-size: 20px; color: var(--blue); }
+    .requests-header h2 { margin: 0; font-size: 20px; color: #991b1b; }
     .count-pill {
       background: #ffffff;
       border: 1px solid var(--border);
@@ -248,8 +253,11 @@
       border-right: 6px solid var(--blue);
       border-radius: 16px;
       padding: 18px;
-      margin: 0 auto 28px;
+      margin: 0 auto 24px;
       box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    }
+    .request-card {
+      border-right-color: var(--red);
     }
     .card-top {
       display: flex;
@@ -268,6 +276,9 @@
       border-radius: 999px;
       font-size: 12px;
       font-weight: 900;
+    }
+    .request-tag {
+      background: #991b1b;
     }
     .type-tag {
       background: #fef2f2;
@@ -362,11 +373,10 @@
   <main class="wrap">
     <section class="admin-messages-box" id="adminMessagesPanel">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-        <h2 style="margin:0; color:var(--blue); font-size:18px;">لوحة الأدمن: الرسائل والأسعار المطروحة</h2>
-        <button type="button" class="btn btn-blue" onclick="loadAdminData()">تحديث البيانات</button>
+        <h2 style="margin:0; color:var(--blue); font-size:18px;">لوحة الأدمن: الرسائل الواردة والردود</h2>
+        <button type="button" class="btn btn-blue" onclick="loadAqarMessages()">تحديث الرسائل</button>
       </div>
-      <div id="aqarOffersList" style="margin-top:10px;">جاري تحميل الأسعار المطروحة...</div>
-      <div id="aqarMessagesList" style="margin-top:14px;">جاري تحميل الرسائل...</div>
+      <div id="aqarMessagesList" style="margin-top:12px;">جاري تحميل الرسائل...</div>
     </section>
 
     <div class="split-grid">
@@ -395,7 +405,7 @@
           <label for="itemPrice">المبلغ المعروض به</label>
           <input type="text" id="itemPrice" required placeholder="مثال: 950,000 أو 4,500,000">
 
-          <label for="sellerPhone">رقم المعلن (شرط أساسي لإضافة الإعلان — لا يظهر في الإعلان)</label>
+          <label for="sellerPhone">رقم المعلن (شرط أساسي لإضافة الإعلان — لا يظهر للزوار إلا بعد القسم)</label>
           <input type="tel" id="sellerPhone" required placeholder="مثال: 771234567">
 
           <label for="itemImages">صور العقار (عدة صور — ضع كل رابط في سطر أو اختر عدة صور من الهاتف)</label>
@@ -417,23 +427,29 @@
       </section>
 
       <section class="panel-box search-side">
-        <h2>البحث عن عقار أو سيارة وطلب الشراء</h2>
+        <h2>البحث عن عقار أو سيارة ونشر طلب الشراء</h2>
         <form id="searchBuyForm" onsubmit="applySearchAndSaveRequest(event)">
-          <label for="searchName">اسم العقار أو السيارة المطلوبة</label>
-          <input type="text" id="searchName" placeholder="مثال: شقة، أرض، باص، هايلوكس...">
+          <label for="searchName">اسم العقار أو السيارة المطلوبة (بدون أرقام)</label>
+          <input type="text" id="searchName" placeholder="مثال: شقة، أرض، باص، هايلوكس..." oninput="blockDigitsInField(this, 'reqNameDigitWarn')">
+          <div id="reqNameDigitWarn" class="field-hint"></div>
 
-          <label for="searchLocation">الموقع المطلوب</label>
-          <input type="text" id="searchLocation" placeholder="مثال: عدن - خورمكسر أو كريتر">
+          <label for="searchLocation">الموقع المطلوب (بدون أرقام)</label>
+          <input type="text" id="searchLocation" placeholder="مثال: عدن - خورمكسر أو كريتر" oninput="blockDigitsInField(this, 'reqLocDigitWarn')">
+          <div id="reqLocDigitWarn" class="field-hint"></div>
 
-          <label for="searchSpecs">المواصفات المطلوبة</label>
-          <textarea id="searchSpecs" placeholder="اكتب المواصفات التي تبحث عنها..."></textarea>
+          <label for="searchSpecs">المواصفات المطلوبة (بدون أرقام)</label>
+          <textarea id="searchSpecs" placeholder="اكتب المواصفات التي تبحث عنها كتابةً دون أرقام..." oninput="blockDigitsInField(this, 'reqSpecsDigitWarn')"></textarea>
+          <div id="reqSpecsDigitWarn" class="field-hint"></div>
 
           <label for="targetBuyPrice">السعر المراد الشراء به</label>
           <input type="text" id="targetBuyPrice" placeholder="مثال: 1,500,000 أو حد أقصى 3,000,000">
 
+          <label for="requesterPhone">رقم صاحب الطلب (يظهر للزوار بعد القسم وللأدمن مباشرة)</label>
+          <input type="tel" id="requesterPhone" placeholder="مثال: 771234567 (مطلوب لحفظ الطلب في الموقع)">
+
           <div class="btn-row">
-            <button type="submit" class="btn btn-red">بحث وتصفية المعروضات</button>
-            <button type="button" class="btn btn-gray" onclick="resetSearchFilters()">عرض الكل</button>
+            <button type="submit" class="btn btn-red" id="saveRequestBtn">بحث ونشر الطلب بالموقع</button>
+            <button type="button" class="btn btn-gray" onclick="resetSearchFilters()">عرض كل المعروضات</button>
           </div>
           <div id="searchStatusMsg" style="margin-top:8px; font-size:12px; font-weight:800; color:#0d47a1;"></div>
         </form>
@@ -449,21 +465,30 @@
         <p style="text-align:center; color:var(--muted);">جاري تحميل المعروضات...</p>
       </div>
     </section>
-  </main>
 
-  <!-- نافذة القسم لمعرفة رقم المعلن -->
+    <section class="listings-section">
+      <div class="listings-header requests-header">
+        <h2>طلبات البحث والشراء المعروضة بالموقع</h2>
+        <span class="count-pill">إجمالي الطلبات: <span id="totalRequestsCount">0</span></span>
+      </div>
+      <div id="requestsContainer">
+        <p style="text-align:center; color:var(--muted);">جاري تحميل طلبات البحث والشراء...</p>
+      </div>
+    </section>
+  </main>
+  <!-- نافذة القسم لمعرفة رقم صاحب الإعلان أو الطلب -->
   <div class="modal-backdrop" id="phoneOathModal">
     <div class="modal-card">
-      <h3 style="margin:0 0 8px; color:var(--red);">القسم لمعرفة رقم المعلن</h3>
+      <h3 style="margin:0 0 8px; color:var(--red);">القسم لمعرفة الرقم</h3>
       <div id="phoneOathItemTitle" style="font-size:13px; font-weight:800; color:#334155; margin-bottom:10px;"></div>
       <div class="oath-box-modal">
-        أقسم بالله العظيم أنني ملتزم بدفع <strong>100 ريال سعودي</strong> إذا تمت الصفقة عبر رقم الحساب في <strong>بنك عدن الأول: 22846</strong>.<br>
-        لكشف رقم المعلن، اكتب عبارة: <strong>أقسم بالله</strong>.
+        أقسم بالله العظيم أنني ملتزم بدفع <strong>100 ريال سعودي</strong> إذا تمت الصفقة عبر رقم الحساب في <strong>بنك عدن الأول: 22846</strong>.
+        لكشف الرقم، اكتب عبارة: <strong>أقسم بالله</strong>.
       </div>
       <label for="phoneOathInput">اكتب عبارة القسم</label>
       <input type="text" id="phoneOathInput" placeholder="أقسم بالله">
       <div class="btn-row">
-        <button type="button" class="btn btn-green" onclick="revealSellerPhoneWithOath()">إظهار رقم المعلن</button>
+        <button type="button" class="btn btn-green" onclick="revealPhoneWithOath()">إظهار الرقم</button>
         <button type="button" class="btn btn-gray" onclick="closePhoneOathModal()">إغلاق</button>
       </div>
       <div id="phoneOathError" style="margin-top:8px; font-size:12px; font-weight:800; color:#c62828;"></div>
@@ -471,47 +496,23 @@
     </div>
   </div>
 
-  <!-- نافذة طرح قيمة العقار -->
-  <div class="modal-backdrop" id="offerPriceModal">
-    <div class="modal-card">
-      <h3 style="margin:0 0 6px; color:var(--amber);">طرح قيمة العقار / المعروض</h3>
-      <div id="offerModalItemTitle" style="font-size:13px; font-weight:800; color:#475569; margin-bottom:10px;"></div>
-      <form onsubmit="submitOfferedPrice(event)">
-        <input type="hidden" id="offerTargetItemId">
-        <input type="hidden" id="offerTargetItemName">
-        <label for="offererName">اسمك</label>
-        <input type="text" id="offererName" required placeholder="اكتب اسمك">
-        <label for="offererPhone">رقم تواصلك</label>
-        <input type="tel" id="offererPhone" required placeholder="مثال: 77xxxxxxx">
-        <label for="offeredPriceValue">القيمة المطروحة</label>
-        <input type="text" id="offeredPriceValue" required placeholder="اكتب المبلغ الذي تطرحه">
-        <label for="offerNotes">ملاحظة (اختياري)</label>
-        <textarea id="offerNotes" rows="2" placeholder="أي تفاصيل إضافية حول السعر أو الدفع..."></textarea>
-        <div class="btn-row">
-          <button type="submit" class="btn btn-amber">إرسال القيمة المطروحة</button>
-          <button type="button" class="btn btn-gray" onclick="closeOfferPriceModal()">إغلاق</button>
-        </div>
-        <div id="offerPriceStatus" style="margin-top:8px; font-size:12px; font-weight:800;"></div>
-      </form>
-    </div>
-  </div>
-
-  <!-- نافذة إرسال رسالة على معروض -->
+  <!-- نافذة إرسال رسالة للأدمن حول إعلان أو طلب -->
   <div class="modal-backdrop" id="sendMsgModal">
     <div class="modal-card">
-      <h3 style="margin:0 0 6px; color:var(--blue);">إرسال رسالة حول المعروض</h3>
+      <h3 style="margin:0 0 6px; color:var(--purple);">إرسال رسالة للأدمن</h3>
       <div id="modalItemTitle" style="font-size:13px; font-weight:800; color:#475569; margin-bottom:10px;"></div>
-      <form onsubmit="submitItemMessage(event)">
-        <input type="hidden" id="msgTargetItemId">
-        <input type="hidden" id="msgTargetItemName">
+      <form onsubmit="submitAdminMessage(event)">
+        <input type="hidden" id="msgTargetKind">
+        <input type="hidden" id="msgTargetId">
+        <input type="hidden" id="msgTargetTitle">
         <label for="visitorMsgName">اسمك</label>
         <input type="text" id="visitorMsgName" required placeholder="اكتب اسمك">
         <label for="visitorMsgPhone">رقم الهاتف أو البريد</label>
         <input type="text" id="visitorMsgPhone" required placeholder="مثال: 77xxxxxxx">
-        <label for="visitorMsgText">نص الرسالة</label>
-        <textarea id="visitorMsgText" required placeholder="اكتب استفسارك أو رسالتك..."></textarea>
+        <label for="visitorMsgText">نص الرسالة للأدمن</label>
+        <textarea id="visitorMsgText" required placeholder="اكتب رسالتك أو استفسارك للأدمن..."></textarea>
         <div class="btn-row">
-          <button type="submit" class="btn btn-green">إرسال الرسالة</button>
+          <button type="submit" class="btn btn-purple">إرسال للأدمن</button>
           <button type="button" class="btn btn-gray" onclick="closeSendMessageModal()">إغلاق</button>
         </div>
         <div id="visitorMsgStatus" style="margin-top:8px; font-size:12px; font-weight:800;"></div>
@@ -530,8 +531,9 @@
     const GH_TOKEN_STORAGE = "aden_sooq_gh_token";
 
     let allListings = [];
+    let allBuyRequests = [];
     let editingItemId = "";
-    let currentPhoneModalItem = null;
+    let currentPhoneModalTarget = null;
     const expandedCardsSet = new Set();
 
     function normalizeArabic(str) {
@@ -564,7 +566,7 @@
       const warnEl = document.getElementById(warnId);
       if (hasAnyDigit(el.value)) {
         el.value = stripAllDigits(el.value);
-        if (warnEl) warnEl.textContent = "يُمنع كتابة أي أرقام داخل نص الإعلان.";
+        if (warnEl) warnEl.textContent = "يُمنع كتابة أي أرقام داخل هذا الحقل.";
       } else if (warnEl) {
         warnEl.textContent = "";
       }
@@ -582,22 +584,19 @@
       if (document.body.classList.contains("owner-admin-mode")) {
         document.body.classList.remove("owner-admin-mode");
         renderListingsList(allListings);
+        renderBuyRequestsList(allBuyRequests);
         return;
       }
       const code = prompt("أدخل رمز الأدمن للتعديل والحذف والرد على الرسائل:");
       if (code === OWNER_PASSCODE) {
         document.body.classList.add("owner-admin-mode");
-        loadAdminData();
+        loadAqarMessages();
         renderListingsList(allListings);
+        renderBuyRequestsList(allBuyRequests);
         alert("تم تفعيل وضع الأدمن");
       } else if (code !== null) {
         alert("الرمز غير صحيح");
       }
-    }
-
-    function loadAdminData() {
-      loadAqarMessages();
-      loadAqarOffers();
     }
 
     function fileToB64(file) {
@@ -653,7 +652,6 @@
       fileEl.value = "";
       msgEl.textContent = `تم تحميل ${urls.length} صورة بنجاح.`;
     }
-
     function saveListingItem(event) {
       event.preventDefault();
 
@@ -757,17 +755,39 @@
       if (!confirm("هل تريد حذف هذا الإعلان نهائياً؟")) return;
       fetch(`${DB_URL}/marketItems/${encodeURIComponent(id)}.json`, { method: "DELETE" })
         .then(() => {
-          expandedCardsSet.delete(id);
+          expandedCardsSet.delete("listing-" + id);
           loadListings();
         })
         .catch(() => alert("تعذر حذف الإعلان"));
     }
 
-    function openPhoneOathModal(itemId) {
-      const item = allListings.find(x => x.id === itemId);
-      if (!item) return;
-      currentPhoneModalItem = item;
-      document.getElementById("phoneOathItemTitle").textContent = "المعروض: " + (item.name || "");
+    function deleteBuyRequestById(reqId) {
+      if (!confirm("هل تريد حذف هذا الطلب نهائياً؟")) return;
+      fetch(`${DB_URL}/buyRequests/${encodeURIComponent(reqId)}.json`, { method: "DELETE" })
+        .then(() => {
+          expandedCardsSet.delete("req-" + reqId);
+          loadBuyRequests();
+        })
+        .catch(() => alert("تعذر حذف الطلب"));
+    }
+
+    function openPhoneOathModal(kind, id) {
+      const sourceList = kind === "request" ? allBuyRequests : allListings;
+      const target = sourceList.find(x => x.id === id);
+      if (!target) return;
+
+      const isAdmin = document.body.classList.contains("owner-admin-mode");
+      const labelTitle = kind === "request"
+        ? "الطلب: " + stripAllDigits(target.name || "")
+        : "المعروض: " + stripAllDigits(target.name || "");
+
+      if (isAdmin) {
+        alert(`${labelTitle}\nرقم التواصل المباشر (الأدمن): ${target.phone || "غير متوفر"}`);
+        return;
+      }
+
+      currentPhoneModalTarget = { kind, item: target };
+      document.getElementById("phoneOathItemTitle").textContent = labelTitle;
       document.getElementById("phoneOathInput").value = "";
       document.getElementById("phoneOathError").textContent = "";
       const box = document.getElementById("revealedPhoneBox");
@@ -777,126 +797,34 @@
     }
 
     function closePhoneOathModal() {
-      currentPhoneModalItem = null;
+      currentPhoneModalTarget = null;
       document.getElementById("phoneOathModal").classList.remove("open");
     }
 
-    function revealSellerPhoneWithOath() {
-      if (!currentPhoneModalItem) return;
+    function revealPhoneWithOath() {
+      if (!currentPhoneModalTarget) return;
       const val = normalizeArabic(document.getElementById("phoneOathInput").value);
       const errEl = document.getElementById("phoneOathError");
       const box = document.getElementById("revealedPhoneBox");
 
       if (val !== "اقسم بالله") {
-        errEl.textContent = "يرجى كتابة عبارة (أقسم بالله) بشكل صحيح لإظهار رقم المعلن.";
+        errEl.textContent = "يرجى كتابة عبارة (أقسم بالله) بشكل صحيح لإظهار الرقم.";
         box.classList.remove("show");
         return;
       }
 
       errEl.textContent = "";
-      box.innerHTML = `رقم المعلن: <span style="user-select:all;">${escapeHtml(currentPhoneModalItem.phone || "غير متوفر")}</span>`;
+      const phoneText = currentPhoneModalTarget.item.phone || "غير متوفر";
+      box.innerHTML = `رقم التواصل: <span style="user-select:all;">${escapeHtml(phoneText)}</span>`;
       box.classList.add("show");
     }
 
-    function openOfferPriceModal(itemId, itemTitle) {
-      document.getElementById("offerTargetItemId").value = itemId || "";
-      document.getElementById("offerTargetItemName").value = itemTitle || "";
-      document.getElementById("offerModalItemTitle").textContent = "المعروض: " + (itemTitle || "");
-      document.getElementById("offerPriceStatus").textContent = "";
-      document.getElementById("offerPriceModal").classList.add("open");
-    }
-
-    function closeOfferPriceModal() {
-      document.getElementById("offerPriceModal").classList.remove("open");
-    }
-
-    function submitOfferedPrice(event) {
-      event.preventDefault();
-      const itemId = document.getElementById("offerTargetItemId").value;
-      const itemTitle = document.getElementById("offerTargetItemName").value;
-      const offererName = document.getElementById("offererName").value.trim();
-      const offererPhone = document.getElementById("offererPhone").value.trim();
-      const offeredPrice = document.getElementById("offeredPriceValue").value.trim();
-      const notes = document.getElementById("offerNotes").value.trim();
-      const statusEl = document.getElementById("offerPriceStatus");
-
-      const offerId = "aqaroffer-" + Date.now();
-      const payload = {
-        id: offerId,
-        itemId,
-        itemTitle,
-        offererName,
-        offererPhone,
-        offeredPrice,
-        notes,
-        sentAt: Date.now()
-      };
-
-      fetch(`${DB_URL}/aqarOffers/${encodeURIComponent(offerId)}.json`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      })
-        .then(r => {
-          if (!r.ok) throw new Error();
-          statusEl.style.color = "#1b5e20";
-          statusEl.textContent = "تم تسجيل القيمة المطروحة بنجاح.";
-          setTimeout(() => {
-            closeOfferPriceModal();
-            document.getElementById("offererName").value = "";
-            document.getElementById("offererPhone").value = "";
-            document.getElementById("offeredPriceValue").value = "";
-            document.getElementById("offerNotes").value = "";
-            if (document.body.classList.contains("owner-admin-mode")) loadAqarOffers();
-          }, 600);
-        })
-        .catch(() => {
-          statusEl.style.color = "#c62828";
-          statusEl.textContent = "تعذر إرسال القيمة المطروحة.";
-        });
-    }
-
-    function loadAqarOffers() {
-      const box = document.getElementById("aqarOffersList");
-      if (!box) return;
-      fetch(`${DB_URL}/aqarOffers.json`)
-        .then(r => r.json())
-        .then(data => {
-          if (!data || typeof data !== "object") {
-            box.innerHTML = "<p style='color:#64748b; font-size:13px;'>لا توجد أسعار مطروحة حالياً.</p>";
-            return;
-          }
-          const list = Object.entries(data)
-            .map(([k, v]) => ({ ...(v || {}), id: (v && v.id) || k }))
-            .sort((a, b) => (b.sentAt || 0) - (a.sentAt || 0));
-
-          box.innerHTML = `<h3 style="margin:6px 0; color:var(--amber); font-size:15px;">القيم والأسعار المطروحة (${list.length})</h3>` + list.map(o => `
-            <div class="offer-item-card">
-              <div style="font-weight:800; color:#92400e;">${escapeHtml(o.offererName || "مقدم عرض")} — <span style="font-size:12px;">${escapeHtml(o.offererPhone || "")}</span></div>
-              <div style="font-size:12px; font-weight:700; color:#334155; margin:3px 0;">المعروض: ${escapeHtml(o.itemTitle || "")}</div>
-              <div style="font-size:14px; font-weight:900; color:var(--green);">القيمة المطروحة: ${escapeHtml(o.offeredPrice || "")}</div>
-              ${o.notes ? `<p style="margin:6px 0 0; font-size:13px;">${escapeHtml(o.notes)}</p>` : ""}
-              <div class="btn-row" style="margin-top:8px;">
-                <button type="button" class="btn btn-red" onclick="deleteAqarOffer('${escapeHtml(o.id)}')">حذف</button>
-              </div>
-            </div>
-          `).join("");
-        })
-        .catch(() => {
-          box.innerHTML = "<p style='color:#c62828; font-size:13px;'>تعذر تحميل الأسعار المطروحة.</p>";
-        });
-    }
-
-    function deleteAqarOffer(offerId) {
-      if (!confirm("هل تريد حذف هذا العرض السعري؟")) return;
-      fetch(`${DB_URL}/aqarOffers/${encodeURIComponent(offerId)}.json`, { method: "DELETE" })
-        .then(() => loadAqarOffers());
-    }
-
-    function openSendMessageModal(itemId, itemTitle) {
-      document.getElementById("msgTargetItemId").value = itemId || "";
-      document.getElementById("msgTargetItemName").value = itemTitle || "";
-      document.getElementById("modalItemTitle").textContent = "المعروض: " + (itemTitle || "");
+    function openSendMessageModal(kind, id, title) {
+      document.getElementById("msgTargetKind").value = kind || "listing";
+      document.getElementById("msgTargetId").value = id || "";
+      document.getElementById("msgTargetTitle").value = title || "";
+      const prefix = kind === "request" ? "طلب" : "معروض";
+      document.getElementById("modalItemTitle").textContent = `رسالة للأدمن بخصوص ${prefix}: ${stripAllDigits(title || "")}`;
       document.getElementById("visitorMsgStatus").textContent = "";
       document.getElementById("sendMsgModal").classList.add("open");
     }
@@ -905,10 +833,11 @@
       document.getElementById("sendMsgModal").classList.remove("open");
     }
 
-    function submitItemMessage(event) {
+    function submitAdminMessage(event) {
       event.preventDefault();
-      const itemId = document.getElementById("msgTargetItemId").value;
-      const itemTitle = document.getElementById("msgTargetItemName").value;
+      const targetKind = document.getElementById("msgTargetKind").value;
+      const targetId = document.getElementById("msgTargetId").value;
+      const targetTitle = stripAllDigits(document.getElementById("msgTargetTitle").value);
       const senderName = document.getElementById("visitorMsgName").value.trim();
       const senderPhone = document.getElementById("visitorMsgPhone").value.trim();
       const messageText = document.getElementById("visitorMsgText").value.trim();
@@ -917,8 +846,9 @@
       const msgId = "aqarmsg-" + Date.now();
       const payload = {
         id: msgId,
-        itemId,
-        itemTitle,
+        targetKind,
+        targetId,
+        itemTitle: targetTitle,
         senderName,
         senderPhone,
         messageText,
@@ -934,7 +864,7 @@
         .then(r => {
           if (!r.ok) throw new Error();
           statusEl.style.color = "#1b5e20";
-          statusEl.textContent = "تم إرسال رسالتك بنجاح.";
+          statusEl.textContent = "تم إرسال رسالتك للأدمن بنجاح.";
           setTimeout(() => {
             closeSendMessageModal();
             document.getElementById("visitorMsgName").value = "";
@@ -964,13 +894,14 @@
             .sort((a, b) => (b.sentAt || 0) - (a.sentAt || 0));
 
           box.innerHTML = `<h3 style="margin:6px 0; color:var(--blue); font-size:15px;">الرسائل (${list.length})</h3>` + list.map(m => {
+            const kindLabel = m.targetKind === "request" ? "طلب شراء" : "معروض";
             const replyHtml = m.adminReply
               ? `<div class="msg-reply-box"><strong>رد الأدمن:</strong> ${escapeHtml(m.adminReply)}</div>`
               : "";
             return `
               <div class="msg-item-card">
                 <div style="font-weight:800; color:var(--blue);">${escapeHtml(m.senderName || "مرسل")} — <span style="font-size:12px; color:#475569;">${escapeHtml(m.senderPhone || "")}</span></div>
-                <div style="font-size:12px; font-weight:700; color:#991b1b; margin:3px 0;">بخصوص: ${escapeHtml(m.itemTitle || "معروض")}</div>
+                <div style="font-size:12px; font-weight:700; color:#991b1b; margin:3px 0;">بخصوص (${kindLabel}): ${escapeHtml(m.itemTitle || "")}</div>
                 <p style="margin:6px 0; font-size:14px;">${escapeHtml(m.messageText || "")}</p>
                 ${replyHtml}
                 <div style="margin-top:8px;">
@@ -1019,11 +950,33 @@
 
     function applySearchAndSaveRequest(event) {
       event.preventDefault();
-      const qName = normalizeArabic(document.getElementById("searchName").value);
-      const qLoc = normalizeArabic(document.getElementById("searchLocation").value);
-      const qSpecs = normalizeArabic(document.getElementById("searchSpecs").value);
-      const qPriceRaw = document.getElementById("targetBuyPrice").value.trim();
-      const qPriceNum = parseNumericPrice(qPriceRaw);
+
+      const nameEl = document.getElementById("searchName");
+      const locEl = document.getElementById("searchLocation");
+      const specsEl = document.getElementById("searchSpecs");
+      const phoneEl = document.getElementById("requesterPhone");
+      const statusEl = document.getElementById("searchStatusMsg");
+
+      blockDigitsInField(nameEl, "reqNameDigitWarn");
+      blockDigitsInField(locEl, "reqLocDigitWarn");
+      blockDigitsInField(specsEl, "reqSpecsDigitWarn");
+
+      const rawName = nameEl.value.trim();
+      const rawLoc = locEl.value.trim();
+      const rawSpecs = specsEl.value.trim();
+      const targetPrice = document.getElementById("targetBuyPrice").value.trim();
+      const requesterPhone = phoneEl.value.trim();
+
+      if (hasAnyDigit(rawName) || hasAnyDigit(rawLoc) || hasAnyDigit(rawSpecs)) {
+        statusEl.style.color = "#c62828";
+        statusEl.textContent = "يُمنع تسجيل أي أرقام في اسم المطلوب أو الموقع أو المواصفات.";
+        return;
+      }
+
+      const qName = normalizeArabic(rawName);
+      const qLoc = normalizeArabic(rawLoc);
+      const qSpecs = normalizeArabic(rawSpecs);
+      const qPriceNum = parseNumericPrice(targetPrice);
 
       const filtered = allListings.filter(item => {
         const matchName = !qName || normalizeArabic(item.name).includes(qName);
@@ -1035,41 +988,85 @@
       });
 
       renderListingsList(filtered);
-      document.getElementById("searchStatusMsg").textContent = `نتائج البحث المطابقة: ${filtered.length}`;
+
+      const hasRequestDetails = Boolean(rawName || rawLoc || rawSpecs || targetPrice);
+      if (hasRequestDetails && requesterPhone) {
+        const reqId = "buyreq-" + Date.now();
+        const requestRecord = {
+          id: reqId,
+          name: rawName || "طلب شراء عقار أو سيارة",
+          location: rawLoc || "عدن",
+          specs: rawSpecs || "مواصفات حسب الطلب",
+          targetPrice,
+          phone: requesterPhone,
+          dateText: getTodayDateText(),
+          createdAt: Date.now()
+        };
+
+        fetch(`${DB_URL}/buyRequests/${encodeURIComponent(reqId)}.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestRecord)
+        })
+          .then(r => {
+            if (!r.ok) throw new Error();
+            statusEl.style.color = "#1b5e20";
+            statusEl.textContent = `المعروضات المطابقة: ${filtered.length} — وتم نشر طلب الشراء في الموقع.`;
+            phoneEl.value = "";
+            loadBuyRequests();
+          })
+          .catch(() => {
+            statusEl.style.color = "#c62828";
+            statusEl.textContent = `المعروضات المطابقة: ${filtered.length} — تعذر حفظ الطلب في قاعدة البيانات.`;
+          });
+      } else if (hasRequestDetails && !requesterPhone) {
+        statusEl.style.color = "#0d47a1";
+        statusEl.textContent = `المعروضات المطابقة: ${filtered.length} — أدخل رقم صاحب الطلب إذا أردت نشر الطلب في الموقع.`;
+      } else {
+        statusEl.style.color = "#0d47a1";
+        statusEl.textContent = `المعروضات المطابقة: ${filtered.length}`;
+      }
     }
 
     function resetSearchFilters() {
       document.getElementById("searchBuyForm").reset();
+      document.getElementById("reqNameDigitWarn").textContent = "";
+      document.getElementById("reqLocDigitWarn").textContent = "";
+      document.getElementById("reqSpecsDigitWarn").textContent = "";
       document.getElementById("searchStatusMsg").textContent = "";
       renderListingsList(allListings);
     }
 
-    function toggleMoreDetails(itemId) {
-      const cardEl = document.getElementById("card-" + itemId);
-      const btnEl = document.getElementById("moreBtn-" + itemId);
-      const item = allListings.find(x => x.id === itemId);
-      if (!cardEl || !item) return;
+    function toggleMoreDetails(cardKey, itemId, isListing) {
+      const cardEl = document.getElementById("card-" + cardKey);
+      const btnEl = document.getElementById("moreBtn-" + cardKey);
+      if (!cardEl) return;
 
-      const isCurrentlyExpanded = expandedCardsSet.has(itemId);
+      const isCurrentlyExpanded = expandedCardsSet.has(cardKey);
       if (isCurrentlyExpanded) {
-        expandedCardsSet.delete(itemId);
+        expandedCardsSet.delete(cardKey);
         cardEl.classList.remove("expanded");
         if (btnEl) btnEl.textContent = "المزيد";
       } else {
-        expandedCardsSet.add(itemId);
+        expandedCardsSet.add(cardKey);
         cardEl.classList.add("expanded");
         if (btnEl) btnEl.textContent = "إخفاء التفاصيل";
 
-        const nextViews = Number(item.views || 0) + 1;
-        item.views = nextViews;
-        const viewsBadge = document.getElementById("viewsBadge-" + itemId);
-        if (viewsBadge) viewsBadge.textContent = `المشاهدات: ${nextViews}`;
+        if (isListing) {
+          const item = allListings.find(x => x.id === itemId);
+          if (item) {
+            const nextViews = Number(item.views || 0) + 1;
+            item.views = nextViews;
+            const viewsBadge = document.getElementById("viewsBadge-" + cardKey);
+            if (viewsBadge) viewsBadge.textContent = `المشاهدات: ${nextViews}`;
 
-        fetch(`${DB_URL}/marketItems/${encodeURIComponent(itemId)}/views.json`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(nextViews)
-        }).catch(() => {});
+            fetch(`${DB_URL}/marketItems/${encodeURIComponent(itemId)}/views.json`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(nextViews)
+            }).catch(() => {});
+          }
+        }
       }
     }
 
@@ -1084,9 +1081,10 @@
       }
 
       container.innerHTML = list.map((item, idx) => {
+        const cardKey = "listing-" + item.id;
         const serialNumber = item.serialNumber || (idx + 1);
         const viewsCount = Number(item.views || 0);
-        const isExpanded = expandedCardsSet.has(item.id);
+        const isExpanded = expandedCardsSet.has(cardKey);
         const imgs = Array.isArray(item.images) ? item.images : [];
         const photosHtml = imgs.length
           ? `<div class="item-photos">${imgs.map(url => `<img src="${escapeHtml(url)}" alt="${escapeHtml(stripAllDigits(item.name || ""))}" onclick="window.open(this.src, '_blank')">`).join("")}</div>`
@@ -1097,18 +1095,19 @@
         const safeSpecs = escapeHtml(stripAllDigits(item.specs || ""));
 
         return `
-          <article class="big-white-card ${isExpanded ? "expanded" : ""}" id="card-${escapeHtml(item.id)}">
+          <article class="big-white-card ${isExpanded ? "expanded" : ""}" id="card-${escapeHtml(cardKey)}">
             <div class="card-top">
               <span class="serial-tag">رقم المعروض: #${serialNumber}</span>
               <span class="type-tag">النوع: ${escapeHtml(item.type || "بيع")}</span>
               <span class="date-tag">التاريخ: ${escapeHtml(item.dateText || "")}</span>
-              <span class="admin-views-tag" id="viewsBadge-${escapeHtml(item.id)}">المشاهدات: ${viewsCount}</span>
+              <span class="admin-views-tag" id="viewsBadge-${escapeHtml(cardKey)}">المشاهدات: ${viewsCount}</span>
             </div>
 
             <h3 class="item-main-title">${safeTitle}</h3>
             <div class="item-price-highlight">المبلغ المعروض به: ${escapeHtml(item.price || "")}</div>
+            <div class="admin-direct-phone">رقم المعلن (عرض مباشر للأدمن): ${escapeHtml(item.phone || "غير متوفر")}</div>
 
-            <button type="button" class="btn btn-blue" id="moreBtn-${escapeHtml(item.id)}" onclick="toggleMoreDetails('${escapeHtml(item.id)}')">${isExpanded ? "إخفاء التفاصيل" : "المزيد"}</button>
+            <button type="button" class="btn btn-blue" id="moreBtn-${escapeHtml(cardKey)}" onclick="toggleMoreDetails('${escapeHtml(cardKey)}', '${escapeHtml(item.id)}', true)">${isExpanded ? "إخفاء التفاصيل" : "المزيد"}</button>
 
             <div class="more-details-panel">
               <div class="item-meta-line">الموقع: ${safeLocation}</div>
@@ -1119,12 +1118,63 @@
             <div class="card-bottom">
               <span>تواصل آمن عبر الموقع</span>
               <div class="card-actions-group">
-                <button type="button" class="btn btn-amber" onclick="openOfferPriceModal('${escapeHtml(item.id)}', '${safeTitle}')">طرح قيمة العقار</button>
-                <button type="button" class="btn btn-red" onclick="openPhoneOathModal('${escapeHtml(item.id)}')">معرفة رقم المعلن</button>
-                <button type="button" class="btn btn-blue" onclick="openSendMessageModal('${escapeHtml(item.id)}', '${safeTitle}')">إرسال رسالة</button>
+                <button type="button" class="btn btn-red" onclick="openPhoneOathModal('listing', '${escapeHtml(item.id)}')">معرفة رقم المعلن</button>
+                <button type="button" class="btn btn-purple" onclick="openSendMessageModal('listing', '${escapeHtml(item.id)}', '${safeTitle}')">رسالة للأدمن</button>
                 <div class="owner-controls">
                   <button type="button" class="btn btn-green" onclick="startEditItem('${escapeHtml(item.id)}')">تعديل</button>
                   <button type="button" class="btn btn-red" onclick="deleteItemById('${escapeHtml(item.id)}')">حذف</button>
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderBuyRequestsList(list) {
+      const container = document.getElementById("requestsContainer");
+      const countEl = document.getElementById("totalRequestsCount");
+      if (countEl) countEl.textContent = String(list.length);
+
+      if (!list.length) {
+        container.innerHTML = "<div class='big-white-card request-card'><p style='text-align:center; margin:0; color:#475569;'>لا توجد طلبات بحث وشراء معروضة حالياً.</p></div>";
+        return;
+      }
+
+      container.innerHTML = list.map((req, idx) => {
+        const cardKey = "req-" + req.id;
+        const serialNumber = req.serialNumber || (idx + 1);
+        const isExpanded = expandedCardsSet.has(cardKey);
+        const safeTitle = escapeHtml(stripAllDigits(req.name || ""));
+        const safeLocation = escapeHtml(stripAllDigits(req.location || ""));
+        const safeSpecs = escapeHtml(stripAllDigits(req.specs || ""));
+
+        return `
+          <article class="big-white-card request-card ${isExpanded ? "expanded" : ""}" id="card-${escapeHtml(cardKey)}">
+            <div class="card-top">
+              <span class="serial-tag request-tag">رقم الطلب: #${serialNumber}</span>
+              <span class="type-tag">طلب شراء</span>
+              <span class="date-tag">التاريخ: ${escapeHtml(req.dateText || "")}</span>
+            </div>
+
+            <h3 class="item-main-title">${safeTitle}</h3>
+            ${req.targetPrice ? `<div class="item-price-highlight">السعر المراد الشراء به: ${escapeHtml(req.targetPrice)}</div>` : ""}
+            <div class="admin-direct-phone">رقم صاحب الطلب (عرض مباشر للأدمن): ${escapeHtml(req.phone || "غير متوفر")}</div>
+
+            <button type="button" class="btn btn-blue" id="moreBtn-${escapeHtml(cardKey)}" onclick="toggleMoreDetails('${escapeHtml(cardKey)}', '${escapeHtml(req.id)}', false)">${isExpanded ? "إخفاء التفاصيل" : "المزيد"}</button>
+
+            <div class="more-details-panel">
+              <div class="item-meta-line">الموقع المطلوب: ${safeLocation}</div>
+              <div class="item-specs">${safeSpecs}</div>
+            </div>
+
+            <div class="card-bottom">
+              <span>طلب بحث وشراء منشور</span>
+              <div class="card-actions-group">
+                <button type="button" class="btn btn-red" onclick="openPhoneOathModal('request', '${escapeHtml(req.id)}')">معرفة رقم صاحب الطلب</button>
+                <button type="button" class="btn btn-purple" onclick="openSendMessageModal('request', '${escapeHtml(req.id)}', '${safeTitle}')">رسالة للأدمن</button>
+                <div class="owner-controls">
+                  <button type="button" class="btn btn-red" onclick="deleteBuyRequestById('${escapeHtml(req.id)}')">حذف</button>
                 </div>
               </div>
             </div>
@@ -1158,7 +1208,33 @@
         });
     }
 
+    function loadBuyRequests() {
+      fetch(`${DB_URL}/buyRequests.json`)
+        .then(r => r.json())
+        .then(data => {
+          if (!data || typeof data !== "object") {
+            allBuyRequests = [];
+            renderBuyRequestsList([]);
+            return;
+          }
+          const ordered = Object.entries(data)
+            .map(([key, val]) => ({ ...(val || {}), id: (val && val.id) || key }))
+            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+          allBuyRequests = ordered.map((req, index) => ({
+            ...req,
+            serialNumber: index + 1
+          })).reverse();
+
+          renderBuyRequestsList(allBuyRequests);
+        })
+        .catch(() => {
+          document.getElementById("requestsContainer").innerHTML = "<div class='big-white-card request-card'><p style='text-align:center; margin:0; color:#c62828;'>تعذر تحميل طلبات الشراء من Firebase.</p></div>";
+        });
+    }
+
     loadListings();
+    loadBuyRequests();
   </script>
 </body>
 </html>
