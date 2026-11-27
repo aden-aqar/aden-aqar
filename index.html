@@ -155,6 +155,14 @@
       box-shadow: 0 8px 22px rgba(15, 23, 42, 0.09);
     }
     body.owner-admin-mode .admin-messages-box { display: block; }
+    .admin-token-box {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-right: 4px solid var(--green2);
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 12px;
+    }
     .msg-item-card {
       background: #f8fafc;
       border: 1px solid #cbd5e1;
@@ -371,10 +379,21 @@
   <main class="wrap">
     <section class="admin-messages-box" id="adminMessagesPanel">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-        <h2 style="margin:0; color:var(--blue); font-size:18px;">لوحة الأدمن: الرسائل الواردة والردود</h2>
+        <h2 style="margin:0; color:var(--blue); font-size:18px;">لوحة الأدمن: إعدادات التوكن والرسائل والردود</h2>
         <button type="button" class="btn btn-blue" onclick="loadAqarMessages()">تحديث الرسائل</button>
       </div>
-      <div id="aqarMessagesList" style="margin-top:12px;">جاري تحميل الرسائل...</div>
+
+      <div class="admin-token-box">
+        <label for="adminGhTokenInput" style="margin-top:0; color:#14532d;">رمز GitHub Token لرفع الصور (يُحفظ في هذا المتصفح):</label>
+        <input type="password" id="adminGhTokenInput" placeholder="ألصق رمز GitHub Token هنا (مثال: ghp_... أو github_pat_...)">
+        <div class="btn-row" style="margin-top:8px;">
+          <button type="button" class="btn btn-green" onclick="saveAdminGhToken()">حفظ التوكن</button>
+          <button type="button" class="btn btn-red" onclick="clearAdminGhToken()">مسح التوكن</button>
+        </div>
+        <div id="adminGhTokenStatus" style="margin-top:6px; font-size:12px; font-weight:800; color:#14532d;"></div>
+      </div>
+
+      <div id="aqarMessagesList" style="margin-top:14px;">جاري تحميل الرسائل...</div>
     </section>
 
     <div class="split-grid">
@@ -464,6 +483,7 @@
       </div>
     </section>
   </main>
+
   <!-- نافذة القسم لمعرفة رقم المعلن -->
   <div class="modal-backdrop" id="phoneOathModal">
     <div class="modal-card">
@@ -575,6 +595,52 @@
       }
     }
 
+    function sanitizeTokenValue(raw) {
+      return String(raw || "").replace(/[^A-Za-z0-9_]/g, "").trim();
+    }
+
+    function syncAdminTokenUI() {
+      const inputEl = document.getElementById("adminGhTokenInput");
+      const statusEl = document.getElementById("adminGhTokenStatus");
+      const saved = sanitizeTokenValue(localStorage.getItem(GH_TOKEN_STORAGE) || "");
+      if (inputEl) inputEl.value = saved;
+      if (statusEl) {
+        if (saved) {
+          statusEl.style.color = "#14532d";
+          statusEl.textContent = "التوكن محفوظ حالياً وجاهز لرفع الصور.";
+        } else {
+          statusEl.style.color = "#b91c1c";
+          statusEl.textContent = "لا يوجد توكن محفوظ حالياً. أدخل التوكن واحفظه من لوحة الأدمن.";
+        }
+      }
+    }
+
+    function saveAdminGhToken() {
+      const inputEl = document.getElementById("adminGhTokenInput");
+      const statusEl = document.getElementById("adminGhTokenStatus");
+      const clean = sanitizeTokenValue(inputEl ? inputEl.value : "");
+      if (!clean) {
+        if (statusEl) {
+          statusEl.style.color = "#c62828";
+          statusEl.textContent = "يرجى إدخال رمز GitHub Token صحيح أولاً.";
+        }
+        return;
+      }
+      localStorage.setItem(GH_TOKEN_STORAGE, clean);
+      if (inputEl) inputEl.value = clean;
+      if (statusEl) {
+        statusEl.style.color = "#14532d";
+        statusEl.textContent = "تم حفظ التوكن بنجاح.";
+      }
+    }
+
+    function clearAdminGhToken() {
+      localStorage.removeItem(GH_TOKEN_STORAGE);
+      const inputEl = document.getElementById("adminGhTokenInput");
+      if (inputEl) inputEl.value = "";
+      syncAdminTokenUI();
+    }
+
     function toggleOwnerAdmin() {
       if (document.body.classList.contains("owner-admin-mode")) {
         document.body.classList.remove("owner-admin-mode");
@@ -584,6 +650,7 @@
       const code = prompt("أدخل رمز الأدمن للتعديل والحذف والرد على الرسائل:");
       if (code === OWNER_PASSCODE) {
         document.body.classList.add("owner-admin-mode");
+        syncAdminTokenUI();
         loadAqarMessages();
         renderListingsList(allListings);
         alert("تم تفعيل وضع الأدمن");
@@ -633,21 +700,11 @@
         return;
       }
 
-      let token = String(localStorage.getItem(GH_TOKEN_STORAGE) || "").replace(/[^A-Za-z0-9_]/g, "").trim();
+      const token = sanitizeTokenValue(localStorage.getItem(GH_TOKEN_STORAGE) || "");
       if (!token) {
-        const entered = prompt("أدخل رمز GitHub Token لرفع الصور:");
-        if (!entered) {
-          msgEl.style.color = "#c62828";
-          msgEl.textContent = "تم إلغاء الرفع لعدم إدخال الرمز.";
-          return;
-        }
-        token = String(entered).replace(/[^A-Za-z0-9_]/g, "").trim();
-        if (!token) {
-          msgEl.style.color = "#c62828";
-          msgEl.textContent = "رمز GitHub Token غير صالح.";
-          return;
-        }
-        localStorage.setItem(GH_TOKEN_STORAGE, token);
+        msgEl.style.color = "#c62828";
+        msgEl.textContent = "يرجى إدخال وحفظ رمز GitHub Token أولاً من صفحة الأدمن (إدارة وتعديل).";
+        return;
       }
 
       isUploadCancelled = false;
@@ -697,6 +754,7 @@
             } catch (_) {}
             if (res.status === 401 || res.status === 403) {
               localStorage.removeItem(GH_TOKEN_STORAGE);
+              syncAdminTokenUI();
             }
             throw new Error(`فشل رفع الصورة ${i + 1}${errDetail}`);
           }
@@ -719,13 +777,14 @@
           msgEl.style.color = "#c62828";
           msgEl.textContent = (err && err.name === "AbortError")
             ? "انتهت مهلة التحميل أو تم إلغاؤه. يمكنك المحاولة مرة أخرى."
-            : (err && err.message ? err.message : "تعذر تحميل الصور، تحقق من الرمز أو الاتصال.");
+            : (err && err.message ? err.message : "تعذر تحميل الصور، تحقق من التوكن في صفحة الأدمن أو الاتصال.");
         }
       } finally {
         activeUploadController = null;
         setUploadButtonsState(false);
       }
     }
+
     function saveListingItem(event) {
       event.preventDefault();
 
