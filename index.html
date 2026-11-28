@@ -1077,7 +1077,6 @@
       });
 
       let changed = false;
-      // ترقيم المعروضات السابقة التي ليس لها رقم تسلسلي حسب أقدميتها دون حذفها
       for (let i = list.length - 1; i >= 0; i--) {
         if (!list[i].serialNumber || Number(list[i].serialNumber) <= 0) {
           maxSerial += 1;
@@ -1706,6 +1705,7 @@
       }).join("");
     }
   </script>
+  <script>
     function resetFilters() {
       const searchEl = document.getElementById("searchInput");
       const typeEl = document.getElementById("typeFilter");
