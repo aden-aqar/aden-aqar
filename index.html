@@ -652,8 +652,8 @@
           <div id="uploadMsg" style="margin-top: 8px; font-size: 0.88rem; font-weight: bold;"></div>
         </div>
 
-        <label for="itemDesc">تفاصيل إضافية (يُنقل الرقم والمبلغ لخاناتهما وتُحوّل الأرقام في التفاصيل إلى أحرف)</label>
-        <textarea id="itemDesc" rows="3" placeholder="الصق نص المعروض هنا ليُنقل الرقم والمبلغ لخاناتهما وتُحوّل الأرقام في التفاصيل إلى أحرف..."></textarea>
+        <label for="itemDesc" id="itemDescLabel">تفاصيل إضافية</label>
+        <textarea id="itemDesc" rows="3" placeholder="اكتب التفاصيل هنا..."></textarea>
 
         <div class="row-flex" style="justify-content: flex-end; margin-top: 8px;">
           <button type="submit" class="btn-success" id="saveListingBtn">حفظ ونشر المعروض</button>
@@ -1073,7 +1073,6 @@
       return String(str || "").replace(/[٠-٩]/g, d => String(arabicNums.indexOf(d)));
     }
 
-    // تحويل الأرقام حتى 999 إلى حروف عربية واضحة
     function convertSmallNumberToArabicWords(num) {
       const n = Number(num);
       if (isNaN(n) || n < 0) return "";
@@ -1118,8 +1117,31 @@
       return clean.split("").map(ch => digitNames[Number(ch)] || ch).join(" ");
     }
 
-    // استخلاص رقم المعلن والمبلغ فقط من التفاصيل ونقلهما لخاناتهما، وتحويل باقي الأرقام في التفاصيل إلى حروف
-    function extractFromDescriptionText(rawText) {
+    // حساب عدد الأرقام المكتوبة بالحروف العربية في النص
+    function countSpokenArabicNumbers(text) {
+      const clean = normalizeArabicDigits(String(text || ""))
+        .replace(/[أإآ]/g, "ا")
+        .replace(/ى/g, "ي")
+        .replace(/ة/g, "ه");
+
+      const numberWordPattern = new RegExp(
+        "(?:^|[^\\p{L}\\d])(?:" +
+        "صفر|واحد|واحده|اثنان|اثنتان|اثنا|اثنتا|ثلاث|ثلاثه|ثلاثون|ثلاثمائه|" +
+        "اربع|اربعه|اربعون|اربعمائه|خمس|خمسه|خمسون|خمسمائه|" +
+        "ست|سته|ستون|ستمائه|سبع|سبعه|سبعون|سبعمائه|" +
+        "ثمان|ثماني|ثمانيه|ثمانون|ثمانمائه|تسع|تسعه|تسعون|تسعمائه|" +
+        "عشر|عشره|عشرون|احد عشر|احدى عشر|اثنا عشر|اثنتا عشر|" +
+        "مائه|مائتان|الف|الفان|الاف|مليون|مليونان|ملايين" +
+        ")(?=$|[^\\p{L}\\d])",
+        "gu"
+      );
+
+      const matches = clean.match(numberWordPattern) || [];
+      return matches.length;
+    }
+
+    // استخلاص للأدمن فقط: ينقل رقم التلفون والمبلغ إلى خاناتهما، ويحوّل أي رقم أقل من 5 خانات إلى أحرف، ويمسح أي رقم طويل (5 خانات فأكثر)
+    function extractForAdminDescription(rawText) {
       const normalized = normalizeArabicDigits(String(rawText || ""));
       let extractedPhone = "";
       let extractedPrice = "";
@@ -1158,7 +1180,9 @@
         }
       }
 
-      // 3) إزالة الرقم المستخلص والمبلغ المستخلص من التفاصيل، وتحويل أي أرقام أخرى إلى حروف عربية
+      // 3) إزالة رقم التلفون والمبلغ المستخلصين من نص التفاصيل، ثم معالجة الأرقام المتبقية:
+      // - أقل من 5 خانات -> يحوّل إلى حروف عربية
+      // - 5 خانات فأكثر (رقم طويل) -> يُمسح
       let workingDesc = normalized;
       if (extractedPhone) {
         workingDesc = workingDesc.replace(new RegExp(extractedPhone.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"), " ");
@@ -1171,7 +1195,12 @@
       }
 
       workingDesc = workingDesc.replace(/\d[\d,\.]*/g, match => {
-        const words = numberToArabicWords(match);
+        const plainDigits = match.replace(/[^\d]/g, "");
+        if (!plainDigits) return " ";
+        if (plainDigits.length >= 5) {
+          return " ";
+        }
+        const words = numberToArabicWords(plainDigits);
         return words ? ` ${words} ` : " ";
       });
 
@@ -1191,6 +1220,7 @@
     }
 
     function runAutoExtractFromDesc() {
+      if (!isAdminLoggedIn) return;
       const descEl = document.getElementById("itemDesc");
       if (!descEl) return;
 
@@ -1199,7 +1229,7 @@
         return;
       }
 
-      const result = extractFromDescriptionText(currentDesc);
+      const result = extractForAdminDescription(currentDesc);
       const phoneEl = document.getElementById("itemPhone");
       const priceEl = document.getElementById("itemPrice");
 
@@ -1872,6 +1902,20 @@
     }
   </script>
   <script>
+    function syncDescGuidanceByRole() {
+      const labelEl = document.getElementById("itemDescLabel");
+      const descEl = document.getElementById("itemDesc");
+      if (!labelEl || !descEl) return;
+
+      if (isAdminLoggedIn) {
+        labelEl.textContent = "تفاصيل إضافية (أدمن: يُنقل الرقم والمبلغ لخاناتهما، وتُحوّل الأرقام الأقل من خماسية لأحرف، وتُمسح الأرقام الطويلة)";
+        descEl.placeholder = "الصق نص المعروض هنا ليُنقل الرقم والمبلغ لخاناتهما وتُحوّل الأرقام الأقل من 5 خانات لأحرف...";
+      } else {
+        labelEl.textContent = "تفاصيل إضافية (يُمنع كتابة أي أرقام مطلقاً، ويُمنع أكثر من ثلاثة أرقام بالأحرف)";
+        descEl.placeholder = "اكتب التفاصيل بالكلمات فقط دون أرقام وبحد أقصى ثلاثة أرقام بالأحرف...";
+      }
+    }
+
     function resetFilters() {
       const searchEl = document.getElementById("searchInput");
       const typeEl = document.getElementById("typeFilter");
@@ -1920,6 +1964,7 @@
         titleEl.textContent = "إضافة معروض جديد";
       }
 
+      syncDescGuidanceByRole();
       if (modal) modal.style.display = "flex";
     }
 
@@ -1941,9 +1986,9 @@
       const descEl = document.getElementById("itemDesc");
       let desc = descEl ? descEl.value.trim() : "";
 
-      // استخلاص رقم المعلن والمبلغ فقط وتحويل أي أرقام أخرى في التفاصيل إلى أحرف دون نقل نوع العرض أو مكانه
-      if (desc && hasAnyDigit(desc)) {
-        const extracted = extractFromDescriptionText(desc);
+      // إذا كان المستخدم أدمن: ينقل رقم التلفون والمبلغ إلى خاناتهما، ويحوّل الأرقام الأقل من خماسية لأحرف، ويمسح الأرقام الطويلة
+      if (isAdminLoggedIn && desc && hasAnyDigit(desc)) {
+        const extracted = extractForAdminDescription(desc);
         if (!phone && extracted.phone) phone = extracted.phone;
         if (!price && extracted.price) price = extracted.price;
         desc = extracted.cleanedDesc;
@@ -1987,7 +2032,16 @@
       if (hasAnyDigit(desc)) {
         if (formMsg) {
           formMsg.style.color = "#c62828";
-          formMsg.textContent = "يُمنع كتابة أي أرقام داخل خانة (تفاصيل إضافية).";
+          formMsg.textContent = "يُمنع كتابة أي أرقام مطلقاً داخل خانة (تفاصيل إضافية).";
+        }
+        return;
+      }
+
+      // للزوار: منع كتابة أي رقم بالأحرف إذا كان أكثر من ثلاثة أرقام
+      if (!isAdminLoggedIn && countSpokenArabicNumbers(desc) > 3) {
+        if (formMsg) {
+          formMsg.style.color = "#c62828";
+          formMsg.textContent = "يُمنع كتابة أكثر من ثلاثة أرقام بالأحرف داخل خانة (تفاصيل إضافية) للزوار.";
         }
         return;
       }
@@ -2080,13 +2134,33 @@
       renderListings();
 
       const descInputEl = document.getElementById("itemDesc");
+      const formMsg = document.getElementById("formMsg");
       if (descInputEl) {
         descInputEl.addEventListener("paste", () => {
-          setTimeout(() => runAutoExtractFromDesc(), 10);
+          if (isAdminLoggedIn) {
+            setTimeout(() => runAutoExtractFromDesc(), 10);
+          }
         });
         descInputEl.addEventListener("input", () => {
-          if (hasAnyDigit(descInputEl.value)) {
-            runAutoExtractFromDesc();
+          if (isAdminLoggedIn) {
+            if (hasAnyDigit(descInputEl.value)) {
+              runAutoExtractFromDesc();
+            }
+          } else {
+            if (hasAnyDigit(descInputEl.value)) {
+              descInputEl.value = descInputEl.value.replace(/[0-9٠-٩]+/g, "");
+              if (formMsg) {
+                formMsg.style.color = "#c62828";
+                formMsg.textContent = "يُمنع كتابة أي أرقام مطلقاً داخل خانة (تفاصيل إضافية) للزوار.";
+              }
+            } else if (countSpokenArabicNumbers(descInputEl.value) > 3) {
+              if (formMsg) {
+                formMsg.style.color = "#c62828";
+                formMsg.textContent = "يُمنع كتابة أكثر من ثلاثة أرقام بالأحرف داخل خانة (تفاصيل إضافية) للزوار.";
+              }
+            } else if (formMsg && formMsg.textContent.includes("تفاصيل إضافية")) {
+              formMsg.textContent = "";
+            }
           }
         });
       }
