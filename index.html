@@ -245,7 +245,7 @@
 
     .admin-stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 10px;
       margin-bottom: 12px;
     }
@@ -497,7 +497,7 @@
     </section>
 
     <section class="card hidden" id="adminPanel">
-      <div class="card-title">لوحة الأدمن (صلاحية الحذف، المشاهدات والإعجابات، الشريط الإخباري، ورمز GitHub)</div>
+      <div class="card-title">لوحة الأدمن (صلاحية الحذف، المشاهدات والإعجابات والقسم، الشريط الإخباري، ورمز GitHub)</div>
 
       <div class="row-flex" style="justify-content: space-between; margin-bottom: 12px;">
         <span style="font-size: 0.88rem; color: #14532d; font-weight: bold;">وضع الأدمن مفعّل</span>
@@ -507,16 +507,20 @@
         </div>
       </div>
 
-      <!-- إحصائيات المشاهدات والإعجابات في لوحة الأدمن -->
+      <!-- إحصائيات المشاهدات والإعجابات والقسم في لوحة الأدمن -->
       <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:14px;">
-        <div style="font-weight:bold;color:#14532d;margin-bottom:8px;">إحصائيات مشاهدات المعروضات والإعجابات (أدمن):</div>
+        <div style="font-weight:bold;color:#14532d;margin-bottom:8px;">إحصائيات مشاهدات المعروضات، الإعجابات، وكتابة القسم (أدمن):</div>
         <div class="admin-stats-grid">
           <div class="admin-stat-box">
-            <div class="admin-stat-num" id="adminTotalViewsCount">0</div>
+            <div class="admin-stat-num" id="adminTotalViewsCount">👁️ 0</div>
             <div class="admin-stat-label">إجمالي مشاهدات المعروضات</div>
           </div>
           <div class="admin-stat-box">
-            <div class="admin-stat-num" id="adminTotalLikesCount">0</div>
+            <div class="admin-stat-num" id="adminTotalOathsCount">🤲 0</div>
+            <div class="admin-stat-label">عدد من كتب (أقسم بالله)</div>
+          </div>
+          <div class="admin-stat-box">
+            <div class="admin-stat-num" id="adminTotalLikesCount">❤️ 0</div>
             <div class="admin-stat-label">إجمالي الإعجابات</div>
           </div>
         </div>
@@ -525,8 +529,9 @@
             <thead>
               <tr>
                 <th>الرقم التسلسلي / المعروض</th>
-                <th>المشاهدات</th>
-                <th>الإعجابات</th>
+                <th>👁️ المشاهدات</th>
+                <th>🤲 القسم (أقسم بالله)</th>
+                <th>❤️ الإعجابات</th>
               </tr>
             </thead>
             <tbody id="adminStatsTableBody"></tbody>
@@ -647,8 +652,8 @@
           <div id="uploadMsg" style="margin-top: 8px; font-size: 0.88rem; font-weight: bold;"></div>
         </div>
 
-        <label for="itemDesc">تفاصيل إضافية (يُستخلص الرقم والمبلغ تلقائياً عند اللصق وتُمسح الأرقام من التفاصيل)</label>
-        <textarea id="itemDesc" rows="3" placeholder="الصق نص المعروض هنا ليتم استخلاص الرقم والمبلغ تلقائياً ومسح الأرقام من التفاصيل..."></textarea>
+        <label for="itemDesc">تفاصيل إضافية (يُنقل الرقم والمبلغ لخاناتهما وتُحوّل الأرقام في التفاصيل إلى أحرف)</label>
+        <textarea id="itemDesc" rows="3" placeholder="الصق نص المعروض هنا ليُنقل الرقم والمبلغ لخاناتهما وتُحوّل الأرقام في التفاصيل إلى أحرف..."></textarea>
 
         <div class="row-flex" style="justify-content: flex-end; margin-top: 8px;">
           <button type="submit" class="btn-success" id="saveListingBtn">حفظ ونشر المعروض</button>
@@ -1068,24 +1073,58 @@
       return String(str || "").replace(/[٠-٩]/g, d => String(arabicNums.indexOf(d)));
     }
 
-    function stripAllDigits(str) {
-      return normalizeArabicDigits(String(str || ""))
-        .replace(/[0-9]/g, "")
-        .replace(/[ \t]+/g, " ")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim();
+    // تحويل الأرقام حتى 999 إلى حروف عربية واضحة
+    function convertSmallNumberToArabicWords(num) {
+      const n = Number(num);
+      if (isNaN(n) || n < 0) return "";
+      if (n === 0) return "صفر";
+
+      const ones = ["", "واحد", "اثنان", "ثلاثة", "أربعة", "خمسة", "ستة", "سبعة", "ثمانية", "تسعة"];
+      const tens = ["", "عشرة", "عشرون", "ثلاثون", "أربعون", "خمسون", "ستون", "سبعون", "ثمانون", "تسعون"];
+      const hundreds = ["", "مائة", "مائتان", "ثلاثمائة", "أربعمائة", "خمسمائة", "ستمائة", "سبعمائة", "ثمانمائة", "تسعمائة"];
+
+      if (n < 10) return ones[n];
+      if (n === 10) return "عشرة";
+      if (n === 11) return "أحد عشر";
+      if (n === 12) return "اثنا عشر";
+      if (n < 20) return `${ones[n - 10]} عشر`;
+      if (n < 100) {
+        const u = n % 10;
+        const t = Math.floor(n / 10);
+        return u ? `${ones[u]} و${tens[t]}` : tens[t];
+      }
+      if (n < 1000) {
+        const h = Math.floor(n / 100);
+        const rem = n % 100;
+        return rem ? `${hundreds[h]} و${convertSmallNumberToArabicWords(rem)}` : hundreds[h];
+      }
+      return String(n).split("").map(d => ones[Number(d)] || d).join(" ");
     }
 
-    // استخلاص الرقم، المبلغ، النوع، نوع العرض، والمنطقة من نص التفاصيل ومسح الأرقام المستخلصة وأي أرقام أخرى من التفاصيل
+    function numberToArabicWords(rawNumStr) {
+      const clean = normalizeArabicDigits(String(rawNumStr || "")).replace(/[^\d]/g, "");
+      if (!clean) return "";
+      const n = Number(clean);
+      if (!isNaN(n) && n <= 999) {
+        return convertSmallNumberToArabicWords(n);
+      }
+      if (!isNaN(n) && n >= 1000 && n < 1000000) {
+        const thousands = Math.floor(n / 1000);
+        const rem = n % 1000;
+        const tWord = thousands === 1 ? "ألف" : (thousands === 2 ? "ألفان" : `${convertSmallNumberToArabicWords(thousands)} آلاف`);
+        return rem ? `${tWord} و${convertSmallNumberToArabicWords(rem)}` : tWord;
+      }
+      const digitNames = ["صفر", "واحد", "اثنان", "ثلاثة", "أربعة", "خمسة", "ستة", "سبعة", "ثمانية", "تسعة"];
+      return clean.split("").map(ch => digitNames[Number(ch)] || ch).join(" ");
+    }
+
+    // استخلاص رقم المعلن والمبلغ فقط من التفاصيل ونقلهما لخاناتهما، وتحويل باقي الأرقام في التفاصيل إلى حروف
     function extractFromDescriptionText(rawText) {
       const normalized = normalizeArabicDigits(String(rawText || ""));
       let extractedPhone = "";
       let extractedPrice = "";
-      let extractedType = "";
-      let extractedTitle = "";
-      let extractedArea = "";
 
-      // 1) استخلاص رقم المعلن (مثل 777523139 أو أي رقم هاتف من 7 إلى 12 خانة)
+      // 1) استخلاص رقم المعلن
       const phoneMatches = normalized.match(/\b(?:00967|\+?967|0)?(7[01378]\d{7}|\d{7,12})\b/g) || [];
       for (const candidate of phoneMatches) {
         const digitsOnly = candidate.replace(/\D/g, "");
@@ -1101,7 +1140,7 @@
         }
       }
 
-      // 2) استخلاص المبلغ / السعر المرتبط بكلمات السعر أو العملة أو الألف/المليون
+      // 2) استخلاص المبلغ / السعر
       const lines = normalized.split(/\r?\n/);
       for (const line of lines) {
         const cleanLine = line.trim();
@@ -1119,55 +1158,34 @@
         }
       }
 
-      // 3) استخلاص نوع المعاملة (بيع / إيجار / أخرى)
-      if (/إيجار|ايجار|للايجار|للإيجار|شهري|سنوي/i.test(normalized)) {
-        extractedType = "إيجار";
-      } else if (/بيع|للبيع/i.test(normalized)) {
-        extractedType = "بيع";
-      }
-
-      // 4) استخلاص نوع العرض (بقعة / شقة / أرض / سيارة / عمارة / فلة / محل)
-      const kindMatch = normalized.match(/(بقعة|بقعه|شقة|شقه|أرض|ارض|سيارة|سياره|عمارة|عماره|فلة|فله|محل|مزرعة|مزرعه|باص|صالون|دينا|هايلكس)/i);
-      if (kindMatch && kindMatch[1]) {
-        const k = kindMatch[1].replace(/ه$/, "ة");
-        extractedTitle = extractedType ? `${k} ${extractedType}` : k;
-      }
-
-      // 5) استخلاص المنطقة أو الحي المعروف في عدن
-      const areaMatch = normalized.match(/(الحسوة|كريتر|المعلا|المنصورة|خورمكسر|الشيخ\s*عثمان|دار\s*سعد|البريقة|صيرة|التواهي|القلوعة|جولة\s*الكثيري)/i);
-      if (areaMatch && areaMatch[1]) {
-        extractedArea = /عدن/i.test(normalized) ? `${areaMatch[1]} - عدن` : areaMatch[1];
-      }
-
-      // 6) مسح الرقم المستخلص والمبلغ المستخلص وأي أرقام أخرى من التفاصيل
-      let cleanedDesc = normalized;
+      // 3) إزالة الرقم المستخلص والمبلغ المستخلص من التفاصيل، وتحويل أي أرقام أخرى إلى حروف عربية
+      let workingDesc = normalized;
       if (extractedPhone) {
-        cleanedDesc = cleanedDesc.replace(new RegExp(extractedPhone.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"), " ");
+        workingDesc = workingDesc.replace(new RegExp(extractedPhone.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"), " ");
       }
       if (extractedPrice) {
         const priceNumOnly = extractedPrice.replace(/[^\d,\.]/g, "");
         if (priceNumOnly) {
-          cleanedDesc = cleanedDesc.replace(new RegExp(priceNumOnly.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"), " ");
+          workingDesc = workingDesc.replace(new RegExp(priceNumOnly.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"), " ");
         }
       }
 
-      // إزالة أي أرقام متبقية في نص التفاصيل مع تنظيف الكلمات المرتبطة بالأرقام الفارغة مثل "المساحه في"
-      cleanedDesc = cleanedDesc
-        .replace(/[0-9٠-٩]+/g, " ")
-        .replace(/(\bالمساحه|\bالمساحة)\s+(في|x|\*)\s*/gi, " ")
+      workingDesc = workingDesc.replace(/\d[\d,\.]*/g, match => {
+        const words = numberToArabicWords(match);
+        return words ? ` ${words} ` : " ";
+      });
+
+      const cleanedDesc = workingDesc
         .replace(/[ \t]+/g, " ")
         .split(/\r?\n/)
         .map(l => l.trim())
-        .filter(l => l && !/^(للتواصل|تواصل|رقم|السعر|المبلغ|المساحه|المساحة)\s*:?$/i.test(l))
+        .filter(l => l && !/^(للتواصل|تواصل|رقم|السعر|المبلغ)\s*:?$/i.test(l))
         .join("\n")
         .trim();
 
       return {
         phone: extractedPhone,
         price: extractedPrice,
-        type: extractedType,
-        title: extractedTitle,
-        area: extractedArea,
         cleanedDesc
       };
     }
@@ -1184,24 +1202,12 @@
       const result = extractFromDescriptionText(currentDesc);
       const phoneEl = document.getElementById("itemPhone");
       const priceEl = document.getElementById("itemPrice");
-      const typeEl = document.getElementById("itemType");
-      const titleEl = document.getElementById("itemTitle");
-      const areaEl = document.getElementById("itemArea");
 
       if (phoneEl && result.phone && !phoneEl.value.trim()) {
         phoneEl.value = result.phone;
       }
       if (priceEl && result.price && !priceEl.value.trim()) {
         priceEl.value = result.price;
-      }
-      if (typeEl && result.type) {
-        typeEl.value = result.type;
-      }
-      if (titleEl && result.title && !titleEl.value.trim()) {
-        titleEl.value = stripAllDigits(result.title);
-      }
-      if (areaEl && result.area && !areaEl.value.trim()) {
-        areaEl.value = stripAllDigits(result.area);
       }
 
       descEl.value = result.cleanedDesc;
@@ -1255,6 +1261,20 @@
       } catch (_) {}
     }
 
+    function recordOathSubmission(listingId) {
+      const idKey = String(listingId || "");
+      if (!idKey) return;
+      const map = loadEngagementMap();
+      if (!map[idKey]) {
+        map[idKey] = { views: 0, likes: 0, oaths: 0 };
+      }
+      map[idKey].oaths = Number(map[idKey].oaths || 0) + 1;
+      saveEngagementMap(map);
+      if (isAdminLoggedIn) {
+        renderAdminStats();
+      }
+    }
+
     function loadUserLikes() {
       try {
         const raw = localStorage.getItem(USER_LIKES_STORAGE_KEY);
@@ -1281,7 +1301,7 @@
         if (!idKey || sessionViewedMap[idKey]) return;
         sessionViewedMap[idKey] = true;
         if (!map[idKey]) {
-          map[idKey] = { views: 0, likes: 0 };
+          map[idKey] = { views: 0, likes: 0, oaths: 0 };
         }
         map[idKey].views = Number(map[idKey].views || 0) + 1;
         changed = true;
@@ -1299,7 +1319,7 @@
       const userLikes = loadUserLikes();
       const map = loadEngagementMap();
       if (!map[idKey]) {
-        map[idKey] = { views: 0, likes: 0 };
+        map[idKey] = { views: 0, likes: 0, oaths: 0 };
       }
 
       const alreadyLiked = Boolean(userLikes[idKey]);
@@ -1376,34 +1396,40 @@
     function renderAdminStats() {
       const tbody = document.getElementById("adminStatsTableBody");
       const totalViewsEl = document.getElementById("adminTotalViewsCount");
+      const totalOathsEl = document.getElementById("adminTotalOathsCount");
       const totalLikesEl = document.getElementById("adminTotalLikesCount");
       if (!tbody) return;
 
       const listings = loadListings();
       const map = loadEngagementMap();
       let totalViews = 0;
+      let totalOaths = 0;
       let totalLikes = 0;
 
       const rowsHtml = listings.map(item => {
-        const stats = map[String(item.id)] || { views: 0, likes: 0 };
+        const stats = map[String(item.id)] || { views: 0, likes: 0, oaths: 0 };
         const v = Number(stats.views || 0);
+        const o = Number(stats.oaths || 0);
         const l = Number(stats.likes || 0);
         totalViews += v;
+        totalOaths += o;
         totalLikes += l;
 
         return `
           <tr>
             <td>#${escapeHtml(String(item.serialNumber || "-"))} - ${escapeHtml(item.title || "بدون عنوان")}</td>
             <td>${v}</td>
+            <td>${o}</td>
             <td>${l}</td>
           </tr>
         `;
       }).join("");
 
-      if (totalViewsEl) totalViewsEl.textContent = String(totalViews);
-      if (totalLikesEl) totalLikesEl.textContent = String(totalLikes);
+      if (totalViewsEl) totalViewsEl.textContent = `👁️ ${totalViews}`;
+      if (totalOathsEl) totalOathsEl.textContent = `🤲 ${totalOaths}`;
+      if (totalLikesEl) totalLikesEl.textContent = `❤️ ${totalLikes}`;
 
-      tbody.innerHTML = rowsHtml || `<tr><td colspan="3" style="text-align:center;color:#6b7280;">لا توجد بيانات معروضات حالياً.</td></tr>`;
+      tbody.innerHTML = rowsHtml || `<tr><td colspan="4" style="text-align:center;color:#6b7280;">لا توجد بيانات معروضات حالياً.</td></tr>`;
     }
 
     function applyScreenCaptureDeterrence() {
@@ -1681,6 +1707,7 @@
         return;
       }
 
+      recordOathSubmission(targetId);
       revealedPhonesSession[targetId] = String(found.phone);
       closeOathModal();
       renderListings();
@@ -1905,8 +1932,8 @@
       event.preventDefault();
       const formMsg = document.getElementById("formMsg");
       const editId = document.getElementById("editListingId").value.trim();
-      let title = document.getElementById("itemTitle").value.trim();
-      let area = document.getElementById("itemArea").value.trim();
+      const title = document.getElementById("itemTitle").value.trim();
+      const area = document.getElementById("itemArea").value.trim();
       const type = document.getElementById("itemType").value.trim() || "بيع";
       const saleStatus = document.getElementById("itemSaleStatus").value === "غير متوفر" ? "غير متوفر" : "متوفر";
       let price = document.getElementById("itemPrice").value.trim();
@@ -1914,23 +1941,17 @@
       const descEl = document.getElementById("itemDesc");
       let desc = descEl ? descEl.value.trim() : "";
 
-      // استخلاص أي أرقام أو بيانات متبقية في التفاصيل ومسحها من التفاصيل قبل الحفظ
+      // استخلاص رقم المعلن والمبلغ فقط وتحويل أي أرقام أخرى في التفاصيل إلى أحرف دون نقل نوع العرض أو مكانه
       if (desc && hasAnyDigit(desc)) {
         const extracted = extractFromDescriptionText(desc);
         if (!phone && extracted.phone) phone = extracted.phone;
         if (!price && extracted.price) price = extracted.price;
-        if (!title && extracted.title) title = stripAllDigits(extracted.title);
-        if (!area && extracted.area) area = stripAllDigits(extracted.area);
         desc = extracted.cleanedDesc;
         if (descEl) descEl.value = desc;
         const phoneEl = document.getElementById("itemPhone");
         const priceEl = document.getElementById("itemPrice");
-        const titleEl = document.getElementById("itemTitle");
-        const areaEl = document.getElementById("itemArea");
         if (phoneEl && phone) phoneEl.value = phone;
         if (priceEl && price) priceEl.value = price;
-        if (titleEl && title) titleEl.value = title;
-        if (areaEl && area) areaEl.value = area;
       }
 
       const imagesRaw = document.getElementById("itemImages").value.trim();
