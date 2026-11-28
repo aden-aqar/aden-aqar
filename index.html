@@ -647,8 +647,8 @@
           <div id="uploadMsg" style="margin-top: 8px; font-size: 0.88rem; font-weight: bold;"></div>
         </div>
 
-        <label for="itemDesc">تفاصيل إضافية (يُمنع كتابة أي أرقام هنا)</label>
-        <textarea id="itemDesc" rows="3" placeholder="اكتب المواصفات والملاحظات بالكلمات فقط دون أي أرقام..."></textarea>
+        <label for="itemDesc">تفاصيل إضافية (يُستخلص الرقم والمبلغ تلقائياً عند اللصق وتُمسح الأرقام من التفاصيل)</label>
+        <textarea id="itemDesc" rows="3" placeholder="الصق نص المعروض هنا ليتم استخلاص الرقم والمبلغ تلقائياً ومسح الأرقام من التفاصيل..."></textarea>
 
         <div class="row-flex" style="justify-content: flex-end; margin-top: 8px;">
           <button type="submit" class="btn-success" id="saveListingBtn">حفظ ونشر المعروض</button>
@@ -1066,6 +1066,145 @@
     function normalizeArabicDigits(str) {
       const arabicNums = "٠١٢٣٤٥٦٧٨٩";
       return String(str || "").replace(/[٠-٩]/g, d => String(arabicNums.indexOf(d)));
+    }
+
+    function stripAllDigits(str) {
+      return normalizeArabicDigits(String(str || ""))
+        .replace(/[0-9]/g, "")
+        .replace(/[ \t]+/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    // استخلاص الرقم، المبلغ، النوع، نوع العرض، والمنطقة من نص التفاصيل ومسح الأرقام المستخلصة وأي أرقام أخرى من التفاصيل
+    function extractFromDescriptionText(rawText) {
+      const normalized = normalizeArabicDigits(String(rawText || ""));
+      let extractedPhone = "";
+      let extractedPrice = "";
+      let extractedType = "";
+      let extractedTitle = "";
+      let extractedArea = "";
+
+      // 1) استخلاص رقم المعلن (مثل 777523139 أو أي رقم هاتف من 7 إلى 12 خانة)
+      const phoneMatches = normalized.match(/\b(?:00967|\+?967|0)?(7[01378]\d{7}|\d{7,12})\b/g) || [];
+      for (const candidate of phoneMatches) {
+        const digitsOnly = candidate.replace(/\D/g, "");
+        if (/^7[01378]\d{7}$/.test(digitsOnly)) {
+          extractedPhone = digitsOnly;
+          break;
+        }
+      }
+      if (!extractedPhone && phoneMatches.length > 0) {
+        const fallbackDigits = phoneMatches[phoneMatches.length - 1].replace(/\D/g, "");
+        if (fallbackDigits.length >= 7 && fallbackDigits.length <= 12) {
+          extractedPhone = fallbackDigits;
+        }
+      }
+
+      // 2) استخلاص المبلغ / السعر المرتبط بكلمات السعر أو العملة أو الألف/المليون
+      const lines = normalized.split(/\r?\n/);
+      for (const line of lines) {
+        const cleanLine = line.trim();
+        if (!cleanLine) continue;
+        if (/(السعر|سعر|المبلغ|مبلغ|بمبلغ|سعودي|ريال|دولار|الف|ألف|مليون)/i.test(cleanLine)) {
+          const numMatch = cleanLine.match(/(\d[\d,\.]*)/);
+          if (numMatch && numMatch[1]) {
+            const numVal = numMatch[1].trim();
+            if (!extractedPhone || !numVal.includes(extractedPhone)) {
+              const currencyMatch = cleanLine.match(/(سعودي|ريال\s*يمني|ريال|دولار|الف|ألف|مليون)/i);
+              extractedPrice = currencyMatch ? `${numVal} ${currencyMatch[1]}` : numVal;
+              break;
+            }
+          }
+        }
+      }
+
+      // 3) استخلاص نوع المعاملة (بيع / إيجار / أخرى)
+      if (/إيجار|ايجار|للايجار|للإيجار|شهري|سنوي/i.test(normalized)) {
+        extractedType = "إيجار";
+      } else if (/بيع|للبيع/i.test(normalized)) {
+        extractedType = "بيع";
+      }
+
+      // 4) استخلاص نوع العرض (بقعة / شقة / أرض / سيارة / عمارة / فلة / محل)
+      const kindMatch = normalized.match(/(بقعة|بقعه|شقة|شقه|أرض|ارض|سيارة|سياره|عمارة|عماره|فلة|فله|محل|مزرعة|مزرعه|باص|صالون|دينا|هايلكس)/i);
+      if (kindMatch && kindMatch[1]) {
+        const k = kindMatch[1].replace(/ه$/, "ة");
+        extractedTitle = extractedType ? `${k} ${extractedType}` : k;
+      }
+
+      // 5) استخلاص المنطقة أو الحي المعروف في عدن
+      const areaMatch = normalized.match(/(الحسوة|كريتر|المعلا|المنصورة|خورمكسر|الشيخ\s*عثمان|دار\s*سعد|البريقة|صيرة|التواهي|القلوعة|جولة\s*الكثيري)/i);
+      if (areaMatch && areaMatch[1]) {
+        extractedArea = /عدن/i.test(normalized) ? `${areaMatch[1]} - عدن` : areaMatch[1];
+      }
+
+      // 6) مسح الرقم المستخلص والمبلغ المستخلص وأي أرقام أخرى من التفاصيل
+      let cleanedDesc = normalized;
+      if (extractedPhone) {
+        cleanedDesc = cleanedDesc.replace(new RegExp(extractedPhone.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"), " ");
+      }
+      if (extractedPrice) {
+        const priceNumOnly = extractedPrice.replace(/[^\d,\.]/g, "");
+        if (priceNumOnly) {
+          cleanedDesc = cleanedDesc.replace(new RegExp(priceNumOnly.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"), " ");
+        }
+      }
+
+      // إزالة أي أرقام متبقية في نص التفاصيل مع تنظيف الكلمات المرتبطة بالأرقام الفارغة مثل "المساحه في"
+      cleanedDesc = cleanedDesc
+        .replace(/[0-9٠-٩]+/g, " ")
+        .replace(/(\bالمساحه|\bالمساحة)\s+(في|x|\*)\s*/gi, " ")
+        .replace(/[ \t]+/g, " ")
+        .split(/\r?\n/)
+        .map(l => l.trim())
+        .filter(l => l && !/^(للتواصل|تواصل|رقم|السعر|المبلغ|المساحه|المساحة)\s*:?$/i.test(l))
+        .join("\n")
+        .trim();
+
+      return {
+        phone: extractedPhone,
+        price: extractedPrice,
+        type: extractedType,
+        title: extractedTitle,
+        area: extractedArea,
+        cleanedDesc
+      };
+    }
+
+    function runAutoExtractFromDesc() {
+      const descEl = document.getElementById("itemDesc");
+      if (!descEl) return;
+
+      const currentDesc = descEl.value;
+      if (!currentDesc || !/[0-9٠-٩]/.test(currentDesc)) {
+        return;
+      }
+
+      const result = extractFromDescriptionText(currentDesc);
+      const phoneEl = document.getElementById("itemPhone");
+      const priceEl = document.getElementById("itemPrice");
+      const typeEl = document.getElementById("itemType");
+      const titleEl = document.getElementById("itemTitle");
+      const areaEl = document.getElementById("itemArea");
+
+      if (phoneEl && result.phone && !phoneEl.value.trim()) {
+        phoneEl.value = result.phone;
+      }
+      if (priceEl && result.price && !priceEl.value.trim()) {
+        priceEl.value = result.price;
+      }
+      if (typeEl && result.type) {
+        typeEl.value = result.type;
+      }
+      if (titleEl && result.title && !titleEl.value.trim()) {
+        titleEl.value = stripAllDigits(result.title);
+      }
+      if (areaEl && result.area && !areaEl.value.trim()) {
+        areaEl.value = stripAllDigits(result.area);
+      }
+
+      descEl.value = result.cleanedDesc;
     }
 
     function ensureSerialNumbers(list) {
@@ -1766,13 +1905,34 @@
       event.preventDefault();
       const formMsg = document.getElementById("formMsg");
       const editId = document.getElementById("editListingId").value.trim();
-      const title = document.getElementById("itemTitle").value.trim();
-      const area = document.getElementById("itemArea").value.trim();
+      let title = document.getElementById("itemTitle").value.trim();
+      let area = document.getElementById("itemArea").value.trim();
       const type = document.getElementById("itemType").value.trim() || "بيع";
       const saleStatus = document.getElementById("itemSaleStatus").value === "غير متوفر" ? "غير متوفر" : "متوفر";
-      const price = document.getElementById("itemPrice").value.trim();
-      const phone = document.getElementById("itemPhone").value.trim();
-      const desc = document.getElementById("itemDesc").value.trim();
+      let price = document.getElementById("itemPrice").value.trim();
+      let phone = document.getElementById("itemPhone").value.trim();
+      const descEl = document.getElementById("itemDesc");
+      let desc = descEl ? descEl.value.trim() : "";
+
+      // استخلاص أي أرقام أو بيانات متبقية في التفاصيل ومسحها من التفاصيل قبل الحفظ
+      if (desc && hasAnyDigit(desc)) {
+        const extracted = extractFromDescriptionText(desc);
+        if (!phone && extracted.phone) phone = extracted.phone;
+        if (!price && extracted.price) price = extracted.price;
+        if (!title && extracted.title) title = stripAllDigits(extracted.title);
+        if (!area && extracted.area) area = stripAllDigits(extracted.area);
+        desc = extracted.cleanedDesc;
+        if (descEl) descEl.value = desc;
+        const phoneEl = document.getElementById("itemPhone");
+        const priceEl = document.getElementById("itemPrice");
+        const titleEl = document.getElementById("itemTitle");
+        const areaEl = document.getElementById("itemArea");
+        if (phoneEl && phone) phoneEl.value = phone;
+        if (priceEl && price) priceEl.value = price;
+        if (titleEl && title) titleEl.value = title;
+        if (areaEl && area) areaEl.value = area;
+      }
+
       const imagesRaw = document.getElementById("itemImages").value.trim();
       const images = imagesRaw
         ? imagesRaw.split(/\n+/).map(s => s.trim()).filter(Boolean)
@@ -1897,6 +2057,18 @@
       setInterval(updateClockAndDates, 1000);
       renderAdminStats();
       renderListings();
+
+      const descInputEl = document.getElementById("itemDesc");
+      if (descInputEl) {
+        descInputEl.addEventListener("paste", () => {
+          setTimeout(() => runAutoExtractFromDesc(), 10);
+        });
+        descInputEl.addEventListener("input", () => {
+          if (hasAnyDigit(descInputEl.value)) {
+            runAutoExtractFromDesc();
+          }
+        });
+      }
     });
   </script>
 </body>
