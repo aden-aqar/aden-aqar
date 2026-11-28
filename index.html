@@ -64,6 +64,16 @@
       opacity: 0.95;
     }
 
+    .above-ticker-notice {
+      background: #fef3c7;
+      color: #78350f;
+      text-align: center;
+      padding: 6px 12px;
+      font-size: 0.86rem;
+      font-weight: bold;
+      border-bottom: 1px solid #fcd34d;
+    }
+
     .ticker-wrap {
       background: var(--primary-dark);
       color: #ecfdf5;
@@ -124,6 +134,17 @@
       border-radius: 999px;
       font-weight: bold;
       font-size: 0.9rem;
+    }
+
+    .serial-badge {
+      display: inline-block;
+      background: #eff6ff;
+      color: #1e3a8a;
+      border: 1px solid #bfdbfe;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: bold;
     }
 
     .listing-top-bar {
@@ -209,6 +230,17 @@
       border: 1px solid #d1d5db;
       background: #f3f4f6;
       color: #1f2937;
+    }
+
+    .more-link-btn {
+      background: transparent;
+      color: var(--primary);
+      padding: 2px 4px;
+      font-size: 0.84rem;
+      font-weight: bold;
+      text-decoration: underline;
+      display: inline-block;
+      margin-bottom: 6px;
     }
 
     .admin-stats-grid {
@@ -442,6 +474,8 @@
     <p>منصة عرض العقارات والسيارات في عدن - https://aden-aqar.github.io/aden-aqar/</p>
   </header>
 
+  <div class="above-ticker-notice">استخدمVPN لفتح الموقع ليلا</div>
+
   <div class="ticker-wrap">
     <div class="ticker-text" id="newsTickerText">
       مرحباً بكم في منصة عدن للعقارات والسيارات - تصفح أحدث العروض العقارية والمركبات في عدن - إدارة النشر والصور عبر لوحة الأدمن
@@ -490,7 +524,7 @@
           <table class="admin-listings-stats-table">
             <thead>
               <tr>
-                <th>المعروض</th>
+                <th>الرقم التسلسلي / المعروض</th>
                 <th>المشاهدات</th>
                 <th>الإعجابات</th>
               </tr>
@@ -532,10 +566,10 @@
     </section>
 
     <section class="card">
-      <div class="card-title">البحث عن عقار أو سيارة</div>
+      <div class="card-title">البحث عن عقار أو سيارة (بالرقم التسلسلي أو بنوع المعروض)</div>
       <div class="row-flex">
         <div style="flex: 2; min-width: 210px;">
-          <input type="text" id="searchInput" placeholder="ابحث بالاسم أو المنطقة أو الوصف..." oninput="renderListings()" style="margin-bottom: 0;" />
+          <input type="text" id="searchInput" placeholder="ابحث بالرقم التسلسلي أو النوع أو المنطقة أو الاسم..." oninput="renderListings()" style="margin-bottom: 0;" />
         </div>
         <div style="flex: 1; min-width: 140px;">
           <select id="typeFilter" onchange="renderListings()" style="margin-bottom: 0;">
@@ -575,11 +609,11 @@
       <form id="listingForm" onsubmit="handleSaveListing(event)">
         <input type="hidden" id="editListingId" />
 
-        <label for="itemTitle">عنوان العقار أو السيارة</label>
-        <input type="text" id="itemTitle" placeholder="مثال: شقة 3 غرف في كريتر" required />
+        <label for="itemTitle">نوع العرض</label>
+        <input type="text" id="itemTitle" placeholder="مثال: شقة سكنية أو سيارة صالون (بدون أرقام)" required />
 
-        <label for="itemArea">المنطقة / الحي</label>
-        <input type="text" id="itemArea" placeholder="مثال: كريتر - عدن" required />
+        <label for="itemArea">المنطقة / الحي (يُمنع كتابة أي أرقام)</label>
+        <input type="text" id="itemArea" placeholder="مثال: كريتر - عدن (بدون أرقام)" required />
 
         <label for="itemType">النوع (إيجار أو بيع أو أخرى)</label>
         <select id="itemType">
@@ -600,8 +634,8 @@
         <label for="itemPhone">رقم المعلن (شرط أساسي لإنشاء المعروض - لا يظهر للمشاهدين إلا بعد القسم)</label>
         <input type="tel" id="itemPhone" placeholder="مثال: 771234567" required />
 
-        <label for="itemImages">صور العقار أو السيارة (كل رابط أو مسار في سطر)</label>
-        <textarea id="itemImages" rows="3" placeholder="images/photo1.jpg&#10;images/photo2.jpg"></textarea>
+        <label for="itemImages">صور العقار أو السيارة (كل رابط أو مسار في سطر - بدون أرقام)</label>
+        <textarea id="itemImages" rows="3" placeholder="images/photo.jpg&#10;images/car.jpg"></textarea>
 
         <div class="upload-box">
           <label for="itemFileUpload">تحميل عدة صور من الجهاز إلى مستودع aden-aqar:</label>
@@ -1004,6 +1038,7 @@
     const revealedPhonesSession = {};
     const sessionViewedMap = {};
     const copyFeedbackMap = {};
+    const expandedDetailsMap = {};
 
     function getOrCreateOwnerKey() {
       try {
@@ -1028,6 +1063,44 @@
              String(item && item.saleStatus ? item.saleStatus : "") !== "تم البيع";
     }
 
+    function normalizeArabicDigits(str) {
+      const arabicNums = "٠١٢٣٤٥٦٧٨٩";
+      return String(str || "").replace(/[٠-٩]/g, d => String(arabicNums.indexOf(d)));
+    }
+
+    function ensureSerialNumbers(list) {
+      if (!Array.isArray(list)) return [];
+      let maxSerial = 0;
+      list.forEach(item => {
+        const s = Number(item && item.serialNumber ? item.serialNumber : 0);
+        if (s > maxSerial) maxSerial = s;
+      });
+
+      let changed = false;
+      // ترقيم المعروضات السابقة التي ليس لها رقم تسلسلي حسب أقدميتها دون حذفها
+      for (let i = list.length - 1; i >= 0; i--) {
+        if (!list[i].serialNumber || Number(list[i].serialNumber) <= 0) {
+          maxSerial += 1;
+          list[i].serialNumber = maxSerial;
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        saveListings(list);
+      }
+      return list;
+    }
+
+    function getNextSerialNumber(list) {
+      let maxSerial = 0;
+      (list || []).forEach(item => {
+        const s = Number(item && item.serialNumber ? item.serialNumber : 0);
+        if (s > maxSerial) maxSerial = s;
+      });
+      return maxSerial + 1;
+    }
+
     function loadEngagementMap() {
       try {
         const raw = localStorage.getItem(ENGAGEMENT_STORAGE_KEY);
@@ -1042,16 +1115,6 @@
       try {
         localStorage.setItem(ENGAGEMENT_STORAGE_KEY, JSON.stringify(map));
       } catch (_) {}
-    }
-
-    function getItemStats(listingId) {
-      const idKey = String(listingId || "");
-      const map = loadEngagementMap();
-      const entry = map[idKey] || {};
-      return {
-        views: Number(entry.views || 0),
-        likes: Number(entry.likes || 0)
-      };
     }
 
     function loadUserLikes() {
@@ -1116,6 +1179,13 @@
       if (isAdminLoggedIn) {
         renderAdminStats();
       }
+    }
+
+    function toggleMoreDetails(listingId) {
+      const idKey = String(listingId || "");
+      if (!idKey) return;
+      expandedDetailsMap[idKey] = !Boolean(expandedDetailsMap[idKey]);
+      renderListings();
     }
 
     function buildListingShareLink(listingId) {
@@ -1185,7 +1255,7 @@
 
         return `
           <tr>
-            <td>${escapeHtml(item.title || "بدون عنوان")}</td>
+            <td>#${escapeHtml(String(item.serialNumber || "-"))} - ${escapeHtml(item.title || "بدون عنوان")}</td>
             <td>${v}</td>
             <td>${l}</td>
           </tr>
@@ -1199,7 +1269,6 @@
     }
 
     function applyScreenCaptureDeterrence() {
-      // محاولة الحد قدر الإمكان من تصوير الشاشة والنسخ عبر المتصفح (ملاحظة: أنظمة التشغيل تتحكم بتصوير الشاشة على مستوى الجهاز)
       window.addEventListener("keydown", e => {
         if (
           e.key === "PrintScreen" ||
@@ -1355,6 +1424,7 @@
     const DEFAULT_LISTINGS = [
       {
         id: "sample-1",
+        serialNumber: 1,
         ownerKey: "system-default",
         title: "شقة سكنية ثلاث غرف وحمامين",
         area: "كريتر - عدن",
@@ -1363,10 +1433,11 @@
         price: "45,000,000",
         phone: "770000001",
         images: ["images/sample-flat.jpg"],
-        desc: "تشطيب جيد وقريبة من الخدمات والشارع العام."
+        desc: "تشطيب جيد وقريبة من الخدمات والشارع العام وتتوفر فيها كافة المرافق الأساسية للسكن."
       },
       {
         id: "sample-2",
+        serialNumber: 2,
         ownerKey: "system-default",
         title: "شقة مفروشة للإيجار الشهري",
         area: "المعلا - عدن",
@@ -1375,7 +1446,7 @@
         price: "350,000",
         phone: "770000002",
         images: ["images/sample-rent.jpg"],
-        desc: "مناسبة للعائلات وتتوفر فيها خدمات المياه والكهرباء."
+        desc: "مناسبة للعائلات وتتوفر فيها خدمات المياه والكهرباء والتهوية الممتازة."
       }
     ];
 
@@ -1387,7 +1458,8 @@
           return DEFAULT_LISTINGS.slice();
         }
         const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : DEFAULT_LISTINGS.slice();
+        const validList = Array.isArray(parsed) ? parsed : DEFAULT_LISTINGS.slice();
+        return ensureSerialNumbers(validList);
       } catch (_) {
         return DEFAULT_LISTINGS.slice();
       }
@@ -1492,15 +1564,17 @@
 
     function renderListings() {
       const all = loadListings();
-      const q = String((document.getElementById("searchInput") || {}).value || "").trim().toLowerCase();
+      const rawQ = String((document.getElementById("searchInput") || {}).value || "").trim().toLowerCase();
+      const q = normalizeArabicDigits(rawQ);
       const t = String((document.getElementById("typeFilter") || {}).value || "").trim();
       const container = document.getElementById("listingsContainer");
       const userLikes = loadUserLikes();
 
       const filtered = all.filter(item => {
         const matchType = !t || item.type === t;
+        const serialStr = String(item.serialNumber || "");
         const statusText = isItemAvailable(item) ? "متوفر" : "غير متوفر";
-        const hay = `${item.title || ""} ${item.area || ""} ${item.desc || ""} ${item.type || ""} ${statusText}`.toLowerCase();
+        const hay = `${serialStr} #${serialStr} ${item.title || ""} ${item.area || ""} ${item.desc || ""} ${item.type || ""} ${statusText}`.toLowerCase();
         const matchQuery = !q || hay.includes(q);
         return matchType && matchQuery;
       });
@@ -1524,18 +1598,42 @@
         const available = isItemAvailable(item);
         const statusClass = available ? "status-available" : "status-sold";
         const statusLabel = available ? "متوفر" : "غير متوفر";
+        const serialNum = item.serialNumber || "-";
 
         const canEdit = isListingOwner(item);
         const canDelete = isAdminLoggedIn || isListingOwner(item);
         const isPhoneRevealed = Boolean(revealedPhonesSession[String(item.id)]);
         const isLiked = Boolean(userLikes[String(item.id)]);
+        const isExpanded = Boolean(expandedDetailsMap[String(item.id)]);
         const toastMsg = copyFeedbackMap[String(item.id)] || "";
+
+        const fullDesc = String(item.desc || "");
+        const previewDesc = fullDesc.length > 55 && !isExpanded
+          ? fullDesc.slice(0, 55) + "..."
+          : fullDesc;
+
+        const extraPhotosHtml = isExpanded && imgs.length > 1
+          ? `<div class="row-flex" style="margin:6px 0;">${imgs.slice(1).map(src => `<img src="${escapeHtml(resolveImageSrc(src))}" alt="صورة إضافية" style="width:70px;height:55px;object-fit:cover;border-radius:6px;border:1px solid #d1d5db;" onerror="this.style.display='none';" />`).join("")}</div>`
+          : "";
+
+        const moreDetailsHtml = `
+          ${isExpanded ? `<div style="font-size:0.83rem;color:#374151;background:#f9fafb;padding:8px;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:6px;">
+            <div><strong>الرقم التسلسلي:</strong> #${escapeHtml(String(serialNum))}</div>
+            <div><strong>نوع العرض:</strong> ${escapeHtml(item.title)}</div>
+            <div><strong>المنطقة:</strong> ${escapeHtml(item.area)}</div>
+            <div><strong>التصنيف:</strong> ${escapeHtml(item.type)}</div>
+            <div><strong>التفاصيل الكاملة:</strong> ${escapeHtml(fullDesc || "لا توجد تفاصيل إضافية.")}</div>
+            ${extraPhotosHtml}
+          </div>` : ""}
+          <button type="button" class="more-link-btn" onclick="toggleMoreDetails('${escapeHtml(item.id)}')">
+            ${isExpanded ? "إخفاء التفاصيل ▲" : "المزيد..."}
+          </button>
+        `;
 
         const phoneSectionHtml = isPhoneRevealed
           ? `<div class="phone-reveal-box">رقم المعلن: ${escapeHtml(revealedPhonesSession[String(item.id)])}</div>`
           : `<button type="button" class="btn-success" style="width:100%;margin:8px 0;" onclick="openOathModal('${escapeHtml(item.id)}')">اضغط لمعرفة الرقم</button>`;
 
-        // أيقونة أمام حالة المعروض لمنشئ الإعلان فقط لتبديل الحالة بين متوفر وغير متوفر
         const ownerIconBtn = canEdit
           ? `<button type="button"
               class="owner-status-icon-btn ${available ? "is-available" : "is-unavailable"}"
@@ -1547,7 +1645,6 @@
             </button>`
           : "";
 
-        // أيقونة أعجبني في الموقع (العدد يظهر في لوحة الأدمن)
         const likeBtnHtml = `
           <button type="button"
             class="like-btn ${isLiked ? "liked" : ""}"
@@ -1579,13 +1676,17 @@
             <div class="listing-body">
               <div>
                 <div class="listing-top-bar">
-                  <span class="status-badge ${statusClass}">${available ? "✅" : "⛔"} ${statusLabel}</span>
+                  <div class="row-flex" style="gap:6px;">
+                    <span class="serial-badge">رقم المعروض: #${escapeHtml(String(serialNum))}</span>
+                    <span class="status-badge ${statusClass}">${available ? "✅" : "⛔"} ${statusLabel}</span>
+                  </div>
                   ${ownerIconBtn}
                 </div>
                 <h3 style="font-size:1.02rem;color:#111827;">${escapeHtml(item.title)}</h3>
                 <div class="listing-meta">${escapeHtml(item.area)} — النوع: <strong>${escapeHtml(item.type)}</strong></div>
                 <div class="listing-price">المبلغ: ${escapeHtml(item.price)}</div>
-                <p style="font-size:0.88rem;color:#374151;margin-bottom:6px;">${escapeHtml(item.desc || "")}</p>
+                <p style="font-size:0.88rem;color:#374151;margin-bottom:4px;">${escapeHtml(previewDesc)}</p>
+                ${moreDetailsHtml}
                 ${phoneSectionHtml}
               </div>
               <div>
@@ -1671,15 +1772,40 @@
       const price = document.getElementById("itemPrice").value.trim();
       const phone = document.getElementById("itemPhone").value.trim();
       const desc = document.getElementById("itemDesc").value.trim();
-      const images = document.getElementById("itemImages").value
-        .split(/\n+/)
-        .map(s => s.trim())
-        .filter(Boolean);
+      const imagesRaw = document.getElementById("itemImages").value.trim();
+      const images = imagesRaw
+        ? imagesRaw.split(/\n+/).map(s => s.trim()).filter(Boolean)
+        : [];
 
       if (!title || !area || !price || !phone) {
         if (formMsg) {
           formMsg.style.color = "#c62828";
-          formMsg.textContent = "يرجى تعبئة العنوان والمنطقة والمبلغ ورقم المعلن (شرط أساسي).";
+          formMsg.textContent = "يرجى تعبئة نوع العرض والمنطقة والمبلغ ورقم المعلن (شرط أساسي).";
+        }
+        return;
+      }
+
+      // منع كتابة أي أرقام في جميع خانات إنشاء/تعديل العرض ما عدا خانة الرقم (phone) وخانة المبلغ (price)
+      if (hasAnyDigit(title)) {
+        if (formMsg) {
+          formMsg.style.color = "#c62828";
+          formMsg.textContent = "يُمنع كتابة أي أرقام داخل خانة (نوع العرض).";
+        }
+        return;
+      }
+
+      if (hasAnyDigit(area)) {
+        if (formMsg) {
+          formMsg.style.color = "#c62828";
+          formMsg.textContent = "يُمنع كتابة أي أرقام داخل خانة (المنطقة / الحي).";
+        }
+        return;
+      }
+
+      if (hasAnyDigit(imagesRaw)) {
+        if (formMsg) {
+          formMsg.style.color = "#c62828";
+          formMsg.textContent = "يُمنع كتابة أي أرقام داخل خانة (صور العقار أو السيارة).";
         }
         return;
       }
@@ -1687,12 +1813,12 @@
       if (hasAnyDigit(desc)) {
         if (formMsg) {
           formMsg.style.color = "#c62828";
-          formMsg.textContent = "يُمنع كتابة أي أرقام داخل تفاصيل العرض. يرجى إزالة الأرقام من التفاصيل.";
+          formMsg.textContent = "يُمنع كتابة أي أرقام داخل خانة (تفاصيل إضافية).";
         }
         return;
       }
 
-      const list = loadListings();
+      const list = ensureSerialNumbers(loadListings());
       const myOwnerKey = getOrCreateOwnerKey();
 
       if (editId) {
@@ -1705,8 +1831,10 @@
             }
             return;
           }
+          const preservedSerial = list[idx].serialNumber || getNextSerialNumber(list);
           list[idx] = {
             ...list[idx],
+            serialNumber: preservedSerial,
             title,
             area,
             type,
@@ -1718,8 +1846,10 @@
           };
         }
       } else {
+        const nextSerial = getNextSerialNumber(list);
         list.unshift({
           id: `item-${Date.now()}`,
+          serialNumber: nextSerial,
           ownerKey: myOwnerKey,
           title,
           area,
