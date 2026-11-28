@@ -634,8 +634,8 @@
         <label for="itemPhone">رقم المعلن (شرط أساسي لإنشاء المعروض - لا يظهر للمشاهدين إلا بعد القسم)</label>
         <input type="tel" id="itemPhone" placeholder="مثال: 771234567" required />
 
-        <label for="itemImages">صور العقار أو السيارة (كل رابط أو مسار في سطر - بدون أرقام)</label>
-        <textarea id="itemImages" rows="3" placeholder="images/photo.jpg&#10;images/car.jpg"></textarea>
+        <label for="itemImages">صور العقار أو السيارة (كل رابط أو مسار في سطر - يُسمح بالأرقام)</label>
+        <textarea id="itemImages" rows="3" placeholder="https://.../photo1.jpg أو images/123.jpg"></textarea>
 
         <div class="upload-box">
           <label for="itemFileUpload">تحميل عدة صور من الجهاز إلى مستودع aden-aqar:</label>
@@ -1705,6 +1705,7 @@
         `;
       }).join("");
     }
+  </script>
     function resetFilters() {
       const searchEl = document.getElementById("searchInput");
       const typeEl = document.getElementById("typeFilter");
@@ -1785,7 +1786,7 @@
         return;
       }
 
-      // منع كتابة أي أرقام في جميع خانات إنشاء/تعديل العرض ما عدا خانة الرقم (phone) وخانة المبلغ (price)
+      // منع كتابة أي أرقام في باقي خانات إنشاء/تعديل العرض ما عدا خانة الرقم (phone) وخانة المبلغ (price) وخانة الصور (images)
       if (hasAnyDigit(title)) {
         if (formMsg) {
           formMsg.style.color = "#c62828";
@@ -1798,14 +1799,6 @@
         if (formMsg) {
           formMsg.style.color = "#c62828";
           formMsg.textContent = "يُمنع كتابة أي أرقام داخل خانة (المنطقة / الحي).";
-        }
-        return;
-      }
-
-      if (hasAnyDigit(imagesRaw)) {
-        if (formMsg) {
-          formMsg.style.color = "#c62828";
-          formMsg.textContent = "يُمنع كتابة أي أرقام داخل خانة (صور العقار أو السيارة).";
         }
         return;
       }
